@@ -82,49 +82,79 @@ func NewClient(cfg *config.Config) *Client {
 	return &Client{cfg: cfg, hc: http.DefaultClient}
 }
 
-// FetchAssignedIssues fetches issues using the JQL in config.
-func (c *Client) FetchAssignedIssues(ctx context.Context) ([]Issue, error) {
+// validateConfig checks if the config is valid
+func (c *Client) validateConfig() error {
 	if c.cfg == nil {
-		return nil, fmt.Errorf("nil config")
+		return fmt.Errorf("nil config")
 	}
 	if !c.cfg.IsValid() {
-		return nil, fmt.Errorf("config is not valid - please fill all required fields")
+		return fmt.Errorf("config is not valid - please fill all required fields")
 	}
+	return nil
+}
 
+// buildRequest creates an HTTP request with Jira authentication
+func (c *Client) buildRequest(ctx context.Context, method, path string, query url.Values) (*http.Request, error) {
 	u, err := url.Parse(c.cfg.BaseURL)
 	if err != nil {
 		return nil, err
 	}
-	// Build search URL
-	u.Path = strings.TrimRight(u.Path, "/") + "/rest/api/3/search/jql"
+
+	u.Path = strings.TrimRight(u.Path, "/") + path
+	if len(query) > 0 {
+		u.RawQuery = query.Encode()
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.SetBasicAuth(c.cfg.Email, c.cfg.APIToken)
+	req.Header.Set("Accept", "application/json")
+
+	return req, nil
+}
+
+// executeRequest performs an HTTP request and checks for errors
+func (c *Client) executeRequest(req *http.Request) (*http.Response, error) {
+	resp, err := c.hc.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, fmt.Errorf("jira API returned status %s", resp.Status)
+	}
+
+	return resp, nil
+}
+
+// FetchAssignedIssues fetches issues using the JQL in config.
+func (c *Client) FetchAssignedIssues(ctx context.Context) ([]Issue, error) {
+	if err := c.validateConfig(); err != nil {
+		return nil, err
+	}
+
 	q := url.Values{}
 	q.Set("jql", c.cfg.JQL)
 	q.Set("maxResults", "50")
 	q.Set("fields", "summary,status,id,self,key")
-	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+	req, err := c.buildRequest(ctx, "GET", "/rest/api/3/search/jql", q)
 	if err != nil {
 		return nil, err
 	}
-	// Basic auth with email:apiToken
-	req.SetBasicAuth(c.cfg.Email, c.cfg.APIToken)
-	req.Header.Set("Accept", "application/json")
 
-	// Make the request
-	resp, err := c.hc.Do(req)
+	resp, err := c.executeRequest(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("jira API returned status %s", resp.Status)
-	}
-
 	// Parse the response JSON
 	var response SearchResponse
-
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
@@ -145,41 +175,23 @@ func (c *Client) FetchAssignedIssues(ctx context.Context) ([]Issue, error) {
 
 // FetchComments fetches all comments for a specific issue
 func (c *Client) FetchComments(ctx context.Context, issueKey string) ([]Comment, error) {
-	if c.cfg == nil {
-		return nil, fmt.Errorf("nil config")
-	}
-	if !c.cfg.IsValid() {
-		return nil, fmt.Errorf("config is not valid - please fill all required fields")
-	}
-
-	u, err := url.Parse(c.cfg.BaseURL)
-	if err != nil {
+	if err := c.validateConfig(); err != nil {
 		return nil, err
 	}
 
-	// Build issue URL to get comments
-	u.Path = strings.TrimRight(u.Path, "/") + "/rest/api/3/issue/" + issueKey
 	q := url.Values{}
 	q.Set("fields", "comment")
-	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+	req, err := c.buildRequest(ctx, "GET", "/rest/api/3/issue/"+issueKey, q)
 	if err != nil {
 		return nil, err
 	}
 
-	req.SetBasicAuth(c.cfg.Email, c.cfg.APIToken)
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := c.hc.Do(req)
+	resp, err := c.executeRequest(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("jira API returned status %s", resp.Status)
-	}
 
 	// Parse the response to extract comments
 	var issueResponse map[string]interface{}
@@ -187,19 +199,25 @@ func (c *Client) FetchComments(ctx context.Context, issueKey string) ([]Comment,
 		return nil, err
 	}
 
+	comments := extractCommentsFromResponse(issueResponse)
+	return comments, nil
+}
+
+// extractCommentsFromResponse parses the API response to extract comments
+func extractCommentsFromResponse(issueResponse map[string]interface{}) []Comment {
 	fields, ok := issueResponse["fields"].(map[string]interface{})
 	if !ok {
-		return []Comment{}, nil
+		return []Comment{}
 	}
 
 	commentData, ok := fields["comment"].(map[string]interface{})
 	if !ok {
-		return []Comment{}, nil
+		return []Comment{}
 	}
 
 	commentsArray, ok := commentData["comments"].([]interface{})
 	if !ok {
-		return []Comment{}, nil
+		return []Comment{}
 	}
 
 	comments := make([]Comment, 0)
@@ -220,7 +238,7 @@ func (c *Client) FetchComments(ctx context.Context, issueKey string) ([]Comment,
 		}
 	}
 
-	return comments, nil
+	return comments
 }
 
 // parseCommentFromMap converts a map to a Comment struct

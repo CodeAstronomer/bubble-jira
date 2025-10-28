@@ -1,0 +1,185 @@
+package ui
+
+import (
+	"bubble-jira/config"
+	"bubble-jira/jira"
+
+	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/progress"
+	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/table"
+	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+// model represents the main application model
+type model struct {
+	cfg              *config.Config
+	jc               *jira.Client
+	state            string
+	menu             list.Model
+	settings         list.Model
+	tasksTable       table.Model
+	taskContextMenu  list.Model
+	selectedIssue    *jira.Issue
+	configList       configListEditor
+	configInput      configInputEditor
+	fetching         fetchingModel
+	commentsViewport viewport.Model
+	statusBar        string
+	editingFieldIdx  int
+	configValidError string
+	licenceContent   string
+	licenceLoading   bool
+	comments         []jira.Comment
+	commentsLoading  bool
+	screenWidth      int
+	screenHeight     int
+}
+
+// fetchingModel represents the fetching state UI
+type fetchingModel struct {
+	spinner      spinner.Model
+	progress     progress.Model
+	stages       []string
+	currentStage int
+	status       string
+	error        string
+	done         bool
+	width        int
+}
+
+// configListEditor handles config list editing
+type configListEditor struct {
+	fields []configField
+	list   list.Model
+}
+
+// configField represents a configuration field
+type configField struct {
+	key   string
+	value string
+}
+
+func (cf configField) Title() string       { return cf.key }
+func (cf configField) Description() string { return cf.value }
+func (cf configField) FilterValue() string { return cf.key }
+
+// configInputEditor handles individual config field editing
+type configInputEditor struct {
+	input     textinput.Model
+	key       string
+	focusSave bool
+}
+
+// menuItem represents a menu item
+type menuItem struct {
+	title   string
+	enabled bool
+}
+
+func (m menuItem) Title() string       { return m.title }
+func (m menuItem) Description() string { return "" }
+func (m menuItem) FilterValue() string { return m.title }
+
+// contextMenuItem represents a context menu item
+type contextMenuItem struct {
+	title string
+}
+
+func (cm contextMenuItem) Title() string       { return cm.title }
+func (cm contextMenuItem) Description() string { return "" }
+func (cm contextMenuItem) FilterValue() string { return cm.title }
+
+// newModel creates the initial model state
+func newModel(cfg *config.Config, jc *jira.Client) model {
+	menuItems := []list.Item{
+		menuItem{title: MenuViewTasksTitle, enabled: cfg.IsValid()},
+		menuItem{title: MenuSettingsTitle, enabled: true},
+		menuItem{title: MenuQuitTitle, enabled: true},
+	}
+	menu := list.New(menuItems, list.NewDefaultDelegate(), 40, 15)
+	menu.Title = "Main Menu"
+	menu.SetShowHelp(true)
+	menu.SetShowPagination(false)
+
+	vp := viewport.New(200, 50)
+	vp.Style = commentsStyle
+
+	return model{
+		cfg:              cfg,
+		jc:               jc,
+		state:            "menu",
+		menu:             menu,
+		fetching:         newFetchingModel(),
+		commentsViewport: vp,
+		screenWidth:      200,
+		screenHeight:     50,
+	}
+}
+
+// Init initializes the model
+func (m model) Init() tea.Cmd {
+	return nil
+}
+
+// Update handles all user input and messages
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch m.state {
+	case "menu":
+		return m.updateMenu(msg)
+	case "settings":
+		return m.updateSettings(msg)
+	case "licence":
+		return m.updateLicence(msg)
+	case "fetching":
+		return m.updateFetching(msg)
+	case "tasks":
+		return m.updateTasks(msg)
+	case "task-context":
+		return m.updateTaskContext(msg)
+	case "comments-fetching":
+		return m.updateCommentsFetching(msg)
+	case "comments-view":
+		return m.updateCommentsView(msg)
+	case "config":
+		return m.updateConfigList(msg)
+	case "config-edit":
+		return m.updateConfigEdit(msg)
+	default:
+		return m, nil
+	}
+}
+
+// View renders the current view based on state
+func (m model) View() string {
+	switch m.state {
+	case "menu":
+		view := m.menu.View()
+		if m.configValidError != "" {
+			view = view + "\n\n" + errorStyle.Render(m.configValidError)
+		}
+		return menuStyle.Render(view)
+	case "settings":
+		return menuStyle.Render(m.settings.View())
+	case "licence":
+		return menuStyle.Render(m.licenceView())
+	case "tasks":
+		return tasksStyle.Render(m.tasksTableView())
+	case "task-context":
+		return tasksStyle.Render(m.taskContextView())
+	case "comments-fetching":
+		return fetchingStyle.Render(m.fetchingView())
+	case "comments-view":
+		return m.commentsView()
+	case "config":
+		return configStyle.Render(m.configListView())
+	case "config-edit":
+		return configStyle.Render(m.configInputView())
+	case "fetching":
+		return fetchingStyle.Render(m.fetchingView())
+	default:
+		return "Unknown state"
+	}
+}
