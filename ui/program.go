@@ -1,7 +1,8 @@
 package ui
 
 import (
-    "context"
+	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -18,7 +19,9 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -48,6 +51,10 @@ type menuItem struct {
 	enabled bool
 }
 
+type contextMenuItem struct {
+	title string
+}
+
 const (
 	MenuViewTasksTitle     = "View Jira Tasks"
 	MenuSettingsTitle      = "Settings"
@@ -55,17 +62,27 @@ const (
 	MenuConfigTitle        = "Edit Config"
 	MenuLicenceTitle       = "LICENSE"
 	MenuBackTitle          = "Back to Main Menu"
+	ContextViewComments    = "View Comments"
 )
 
 func (m menuItem) Title() string       { return m.title }
 func (m menuItem) Description() string { return "" }
 func (m menuItem) FilterValue() string { return m.title }
 
+func (cm contextMenuItem) Title() string       { return cm.title }
+func (cm contextMenuItem) Description() string { return "" }
+func (cm contextMenuItem) FilterValue() string { return cm.title }
+
 // ---------- Loading / Fetching messages ----------
 
 type issuesFetchedMsg struct {
 	issues []jira.Issue
 	err    error
+}
+
+type commentsFetchedMsg struct {
+	comments []jira.Comment
+	err      error
 }
 
 type licenceLoadedMsg struct {
@@ -75,17 +92,32 @@ type licenceLoadedMsg struct {
 
 type tickMsg time.Time
 
+// ---------- Comment body types ----------
+
+type ContentNode struct {
+	Type    string        `json:"type"`
+	Content []ContentNode `json:"content,omitempty"`
+	Text    string        `json:"text,omitempty"`
+	Attrs   map[string]interface{} `json:"attrs,omitempty"`
+}
+
+type CommentBody struct {
+	Type    string        `json:"type"`
+	Version int           `json:"version"`
+	Content []ContentNode `json:"content"`
+}
+
 // ---------- Fetching model ----------
 
 type fetchingModel struct {
-	spinner   spinner.Model
-	progress  progress.Model
-	stages    []string
+	spinner      spinner.Model
+	progress     progress.Model
+	stages       []string
 	currentStage int
-	status    string
-	error     string
-	done      bool
-	width     int
+	status       string
+	error        string
+	done         bool
+	width        int
 }
 
 func newFetchingModel() fetchingModel {
@@ -100,17 +132,17 @@ func newFetchingModel() fetchingModel {
 	)
 
 	return fetchingModel{
-		spinner: s,
-		progress: p,
-		stages: []string{
+		spinner:      s,
+		progress:     p,
+		stages:       []string{
 			"Connecting to Jira...",
 			"Authenticating...",
-			"Fetching tasks...",
+			"Fetching comments...",
 			"Processing results...",
 		},
 		currentStage: 0,
-		status: "Connecting to Jira...",
-		width: 80,
+		status:       "Connecting to Jira...",
+		width:        80,
 	}
 }
 
@@ -126,6 +158,8 @@ var (
 	successStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("42"))
 	checkMark    = successStyle.Render("✓")
 	warningStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
+	authorStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
+	timeStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("242")).Italic(true)
 )
 
 type configField struct {
@@ -199,26 +233,37 @@ type model struct {
 	menu             list.Model
 	settings         list.Model
 	tasksTable       table.Model
+	taskContextMenu  list.Model
+	selectedIssue    *jira.Issue
 	configList       configListEditor
 	configInput      configInputEditor
 	fetching         fetchingModel
+	commentsViewport viewport.Model
 	statusBar        string
 	editingFieldIdx  int
 	configValidError string
 	licenceContent   string
 	licenceLoading   bool
+	comments         []jira.Comment
+	commentsLoading  bool
+	screenWidth      int
+	screenHeight     int
 }
 
 // Lipgloss styles
 var (
-	menuStyle     = lipgloss.NewStyle().Padding(1, 2)
-	tasksStyle    = lipgloss.NewStyle().Padding(1, 2)
-	configStyle   = lipgloss.NewStyle().Padding(1, 2)
-	fetchingStyle = lipgloss.NewStyle().Padding(2, 4)
-	helpStyle     = blurredStyle
+	menuStyle      = lipgloss.NewStyle().Padding(1, 2)
+	tasksStyle     = lipgloss.NewStyle().Padding(1, 2)
+	configStyle    = lipgloss.NewStyle().Padding(1, 2)
+	fetchingStyle  = lipgloss.NewStyle().Padding(2, 4)
+	helpStyle      = blurredStyle
 	tableBaseStyle = lipgloss.NewStyle().
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(lipgloss.Color("240"))
+	commentsStyle = lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("62")).
+		Padding(0)
 )
 
 func initialModel(cfg *config.Config, jc *jira.Client) model {
@@ -232,12 +277,18 @@ func initialModel(cfg *config.Config, jc *jira.Client) model {
 	menu.SetShowHelp(true)
 	menu.SetShowPagination(false)
 
+	vp := viewport.New(200, 50)
+	vp.Style = commentsStyle
+
 	return model{
-		cfg:     cfg,
-		jc:      jc,
-		state:   "menu",
-		menu:    menu,
-		fetching: newFetchingModel(),
+		cfg:              cfg,
+		jc:               jc,
+		state:            "menu",
+		menu:             menu,
+		fetching:         newFetchingModel(),
+		commentsViewport: vp,
+		screenWidth:      200,
+		screenHeight:     50,
 	}
 }
 
@@ -247,6 +298,13 @@ func fetchJiraTasksCmd(jc *jira.Client) tea.Cmd {
 	return func() tea.Msg {
 		issues, err := jc.FetchAssignedIssues(context.Background())
 		return issuesFetchedMsg{issues: issues, err: err}
+	}
+}
+
+func fetchCommentsCmd(jc *jira.Client, issueKey string) tea.Cmd {
+	return func() tea.Msg {
+		comments, err := jc.FetchComments(context.Background(), issueKey)
+		return commentsFetchedMsg{comments: comments, err: err}
 	}
 }
 
@@ -290,6 +348,154 @@ func loadLicenceContent() (string, error) {
 	}
 
 	return "License file not found. Please ensure LICENSE file exists in the project root or is available on GitHub.", nil
+}
+
+// ---------- Helper Functions ----------
+
+func parseContentNodes(nodes []ContentNode, result *strings.Builder, depth int) {
+	for _, node := range nodes {
+		switch node.Type {
+		case "paragraph":
+			for _, child := range node.Content {
+				switch child.Type {
+				case "text":
+					result.WriteString(child.Text)
+				case "mention":
+					if text, ok := child.Attrs["text"].(string); ok {
+						result.WriteString(text)
+					}
+				case "hardBreak":
+					result.WriteString("\n")
+				}
+			}
+			result.WriteString("\n")
+
+		case "bulletList", "orderedList":
+			for _, child := range node.Content {
+				if child.Type == "listItem" {
+					result.WriteString("• ")
+					parseContentNodes(child.Content, result, depth+1)
+				}
+			}
+
+		case "codeBlock":
+			result.WriteString("```\n")
+			for _, child := range node.Content {
+				if child.Type == "text" {
+					result.WriteString(child.Text)
+				}
+			}
+			result.WriteString("\n```\n")
+
+		case "heading":
+			if level, ok := node.Attrs["level"].(float64); ok {
+				for i := 0; i < int(level); i++ {
+					result.WriteString("#")
+				}
+				result.WriteString(" ")
+			}
+			for _, child := range node.Content {
+				if child.Type == "text" {
+					result.WriteString(child.Text)
+				}
+			}
+			result.WriteString("\n")
+
+		case "text":
+			result.WriteString(node.Text)
+
+		default:
+			// Recursively parse unknown types
+			if len(node.Content) > 0 {
+				parseContentNodes(node.Content, result, depth)
+			}
+		}
+	}
+}
+
+func parseCommentBody(bodyJSON string) string {
+	var commentBody CommentBody
+	if err := json.Unmarshal([]byte(bodyJSON), &commentBody); err != nil {
+		// If it's not valid JSON, return as-is
+		return bodyJSON
+	}
+
+	var result strings.Builder
+
+	parseContentNodes(commentBody.Content, &result, 0)
+
+	return strings.TrimSpace(result.String())
+}
+
+func formatTime(timeStr string) string {
+	// Parse the time string from Jira (e.g., "2025-10-28T09:31:21.319+0100")
+	t, err := time.Parse("2006-01-02T15:04:05.000-0700", timeStr)
+	if err != nil {
+		// Try alternative format
+		t, err = time.Parse(time.RFC3339, timeStr)
+		if err != nil {
+			return timeStr
+		}
+	}
+	return t.Format("2006-01-02 15:04 MST")
+}
+
+func renderCommentsToMarkdown(comments []jira.Comment) string {
+	var result strings.Builder
+	result.WriteString("# Issue Comments\n\n")
+
+	if len(comments) == 0 {
+		result.WriteString("No comments found.\n")
+		return result.String()
+	}
+
+	for i, comment := range comments {
+		// Main comment header
+		result.WriteString(fmt.Sprintf("## Comment #%d\n\n", i+1))
+
+		// Author and timestamp
+		result.WriteString(fmt.Sprintf("**👤 Author:** %s\n\n", comment.Author.DisplayName))
+		result.WriteString(fmt.Sprintf("**📧 Email:** %s\n\n", comment.Author.EmailAddress))
+		result.WriteString(fmt.Sprintf("**⏰ Posted:** %s\n\n", formatTime(comment.Created)))
+
+		// If updated is different from created, show update time
+		if comment.Updated != comment.Created {
+			result.WriteString(fmt.Sprintf("**📝 Last Updated:** %s\n\n", formatTime(comment.Updated)))
+		}
+
+		result.WriteString("---\n\n")
+
+		// Comment body
+		body := parseCommentBody(comment.BodyJSON)
+		result.WriteString(body)
+		result.WriteString("\n\n")
+
+		// Process replies if they exist
+		if len(comment.Replies) > 0 {
+			result.WriteString("### 💬 Replies:\n\n")
+			for j, reply := range comment.Replies {
+				result.WriteString(fmt.Sprintf("#### Reply #%d\n\n", j+1))
+				result.WriteString(fmt.Sprintf("**👤 Author:** %s\n\n", reply.Author.DisplayName))
+				result.WriteString(fmt.Sprintf("**📧 Email:** %s\n\n", reply.Author.EmailAddress))
+				result.WriteString(fmt.Sprintf("**⏰ Posted:** %s\n\n", formatTime(reply.Created)))
+
+				if reply.Updated != reply.Created {
+					result.WriteString(fmt.Sprintf("**📝 Last Updated:** %s\n\n", formatTime(reply.Updated)))
+				}
+
+				result.WriteString("---\n\n")
+				replyBody := parseCommentBody(reply.BodyJSON)
+				result.WriteString("> " + strings.ReplaceAll(replyBody, "\n", "\n> "))
+				result.WriteString("\n\n")
+			}
+		}
+
+		result.WriteString("\n")
+		result.WriteString(strings.Repeat("═", 95))
+		result.WriteString("\n\n")
+	}
+
+	return result.String()
 }
 
 // ---------- Bubble Tea implementation ----------
@@ -483,8 +689,146 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "enter":
 				row := m.tasksTable.SelectedRow()
 				if len(row) > 0 {
-					return m, tea.Printf("Issue: %s\n", row[0])
+					// Create context menu with only View Comments option
+					contextItems := []list.Item{
+						contextMenuItem{title: ContextViewComments},
+					}
+					m.taskContextMenu = list.New(contextItems, list.NewDefaultDelegate(), 30, 10)
+					m.taskContextMenu.Title = "Actions"
+					m.taskContextMenu.SetShowHelp(true)
+					m.taskContextMenu.SetShowPagination(false)
+
+					key := row[0]
+					m.selectedIssue = &jira.Issue{
+						Key:    key,
+						Title:  row[1],
+						Status: row[2],
+					}
+
+					m.state = "task-context"
+					return m, nil
 				}
+			}
+		}
+		return m, cmd
+
+	case "task-context":
+		var cmd tea.Cmd
+		m.taskContextMenu, cmd = m.taskContextMenu.Update(msg)
+
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "enter":
+				selected := m.taskContextMenu.SelectedItem()
+				menuItem := selected.(contextMenuItem)
+
+				if menuItem.title == ContextViewComments && m.selectedIssue != nil {
+					m.commentsLoading = true
+					m.fetching = newFetchingModel()
+					m.state = "comments-fetching"
+					return m, tea.Batch(
+						fetchCommentsCmd(m.jc, m.selectedIssue.Key),
+						tickFetchCmd(),
+						m.fetching.spinner.Tick,
+					)
+				}
+				m.state = "tasks"
+				m.selectedIssue = nil
+				return m, nil
+
+			case "q", "esc":
+				m.state = "tasks"
+				m.selectedIssue = nil
+				return m, nil
+			}
+		}
+		return m, cmd
+
+	case "comments-fetching":
+		switch msg := msg.(type) {
+		case tickMsg:
+			// Advance progress stages
+			if m.fetching.currentStage < len(m.fetching.stages)-1 {
+				m.fetching.currentStage++
+				percent := float64(m.fetching.currentStage) / float64(len(m.fetching.stages))
+				progressCmd := m.fetching.progress.SetPercent(percent)
+				m.fetching.status = m.fetching.stages[m.fetching.currentStage]
+				return m, tea.Batch(tickFetchCmd(), progressCmd)
+			}
+			return m, nil
+
+		case commentsFetchedMsg:
+			if msg.err != nil {
+				m.fetching.error = msg.err.Error()
+				m.fetching.done = true
+				m.fetching.progress.SetPercent(1.0)
+				m.state = "comments-fetching"
+				return m, nil
+			}
+
+			m.comments = msg.comments
+			m.commentsLoading = false
+
+			// Render comments to markdown
+			markdownContent := renderCommentsToMarkdown(m.comments)
+
+			// Render markdown using glamour
+			renderer, err := glamour.NewTermRenderer(
+				glamour.WithAutoStyle(),
+				glamour.WithWordWrap(m.screenWidth-4),
+			)
+			if err != nil {
+				m.fetching.error = err.Error()
+				m.state = "comments-fetching"
+				return m, nil
+			}
+
+			renderedContent, err := renderer.Render(markdownContent)
+			if err != nil {
+				m.fetching.error = err.Error()
+				m.state = "comments-fetching"
+				return m, nil
+			}
+
+			m.commentsViewport.SetContent(renderedContent)
+			m.state = "comments-view"
+			return m, nil
+
+		case spinner.TickMsg:
+			var cmd tea.Cmd
+			m.fetching.spinner, cmd = m.fetching.spinner.Update(msg)
+			return m, cmd
+
+		case progress.FrameMsg:
+			newProgress, cmd := m.fetching.progress.Update(msg)
+			m.fetching.progress = newProgress.(progress.Model)
+			return m, cmd
+
+		case tea.KeyMsg:
+			if msg.String() == "q" || msg.String() == "esc" {
+				m.state = "tasks"
+			}
+		}
+		return m, nil
+
+	case "comments-view":
+		var cmd tea.Cmd
+		m.commentsViewport, cmd = m.commentsViewport.Update(msg)
+
+		switch msg := msg.(type) {
+		case tea.WindowSizeMsg:
+			m.screenWidth = msg.Width
+			m.screenHeight = msg.Height
+			m.commentsViewport.Width = msg.Width
+			m.commentsViewport.Height = msg.Height - 2
+
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "q", "esc":
+				m.state = "tasks"
+				m.selectedIssue = nil
+				return m, nil
 			}
 		}
 		return m, cmd
@@ -606,6 +950,12 @@ func (m model) View() string {
 		return menuStyle.Render(m.licenceView())
 	case "tasks":
 		return tasksStyle.Render(m.tasksTableView())
+	case "task-context":
+		return tasksStyle.Render(m.taskContextView())
+	case "comments-fetching":
+		return fetchingStyle.Render(m.fetchingView())
+	case "comments-view":
+		return m.commentsView()
 	case "config":
 		return configStyle.Render(m.configListView())
 	case "config-edit":
@@ -653,7 +1003,26 @@ func (m model) tasksTableView() string {
 	var b strings.Builder
 	b.WriteString(tableBaseStyle.Render(m.tasksTable.View()))
 	b.WriteString("\n\n")
-	b.WriteString(helpStyle.Render("Arrow keys: navigate | Q: back to menu | Enter: view issue"))
+	b.WriteString(helpStyle.Render("Arrow keys: navigate | Q: back to menu | Enter: open actions"))
+	return b.String()
+}
+
+func (m model) taskContextView() string {
+	var b strings.Builder
+	if m.selectedIssue != nil {
+		b.WriteString(fmt.Sprintf("Selected: %s - %s\n\n", m.selectedIssue.Key, m.selectedIssue.Title))
+	}
+	b.WriteString(m.taskContextMenu.View())
+	b.WriteString("\n\n")
+	b.WriteString(helpStyle.Render("Enter: select | Q/ESC: back"))
+	return b.String()
+}
+
+func (m model) commentsView() string {
+	var b strings.Builder
+	b.WriteString(m.commentsViewport.View())
+	b.WriteString("\n")
+	b.WriteString(helpStyle.Render("↑/↓: Scroll | Q/ESC: Back to tasks"))
 	return b.String()
 }
 
@@ -689,7 +1058,7 @@ func (m model) fetchingView() string {
 	var b strings.Builder
 
 	// Title
-	b.WriteString("Fetching Jira Tasks\n")
+	b.WriteString("Fetching Jira Data\n")
 	b.WriteString(strings.Repeat("─", 40))
 	b.WriteString("\n\n")
 
@@ -707,11 +1076,7 @@ func (m model) fetchingView() string {
 	if m.fetching.error != "" {
 		b.WriteString(errorStyle.Render("✗ Error: " + m.fetching.error))
 		b.WriteString("\n\n")
-		b.WriteString(helpStyle.Render("Press Q or ESC to return to menu"))
-	} else if m.fetching.done {
-		b.WriteString(successStyle.Render(checkMark + " Tasks fetched successfully!"))
-		b.WriteString("\n\n")
-		b.WriteString(helpStyle.Render("Press Q to return to menu or view tasks"))
+		b.WriteString(helpStyle.Render("Press Q or ESC to return"))
 	} else {
 		b.WriteString(helpStyle.Render("Press Q or ESC to cancel"))
 	}
