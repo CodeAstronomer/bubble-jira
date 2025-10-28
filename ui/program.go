@@ -16,6 +16,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -197,7 +198,7 @@ type model struct {
 	state            string
 	menu             list.Model
 	settings         list.Model
-	tasks            list.Model
+	tasksTable       table.Model
 	configList       configListEditor
 	configInput      configInputEditor
 	fetching         fetchingModel
@@ -215,6 +216,9 @@ var (
 	configStyle   = lipgloss.NewStyle().Padding(1, 2)
 	fetchingStyle = lipgloss.NewStyle().Padding(2, 4)
 	helpStyle     = blurredStyle
+	tableBaseStyle = lipgloss.NewStyle().
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240"))
 )
 
 func initialModel(cfg *config.Config, jc *jira.Client) model {
@@ -366,6 +370,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			} else if msg.String() == "q" || msg.String() == "esc" {
 				m.state = "menu"
+				return m, nil
 			}
 		}
 		return m, cmd
@@ -407,15 +412,42 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-			items := make([]list.Item, len(msg.issues))
-			for i, is := range msg.issues {
-				items[i] = item{Issue: is}
+			// Create table rows from issues
+			rows := make([]table.Row, len(msg.issues))
+			for i, issue := range msg.issues {
+				rows[i] = table.Row{
+					issue.Key,
+					truncateString(issue.Title, 40),
+					issue.Status,
+				}
 			}
-			tasksList := list.New(items, list.NewDefaultDelegate(), 0, 0)
-			tasksList.Title = fmt.Sprintf("Assigned Jira Tasks (%d)", len(msg.issues))
-			tasksList.SetShowHelp(false)
-			tasksList.SetShowPagination(false)
-			m.tasks = tasksList
+
+			columns := []table.Column{
+				{Title: "Key", Width: 12},
+				{Title: "Title", Width: 40},
+				{Title: "Status", Width: 15},
+			}
+
+			t := table.New(
+				table.WithColumns(columns),
+				table.WithRows(rows),
+				table.WithFocused(true),
+				table.WithHeight(15),
+			)
+
+			s := table.DefaultStyles()
+			s.Header = s.Header.
+				BorderStyle(lipgloss.NormalBorder()).
+				BorderForeground(lipgloss.Color("240")).
+				BorderBottom(true).
+				Bold(false)
+			s.Selected = s.Selected.
+				Foreground(lipgloss.Color("229")).
+				Background(lipgloss.Color("57")).
+				Bold(false)
+			t.SetStyles(s)
+
+			m.tasksTable = t
 			m.fetching.progress.SetPercent(1.0)
 			m.fetching.done = true
 			m.fetching.status = "Complete!"
@@ -441,12 +473,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case "tasks":
 		var cmd tea.Cmd
-		m.tasks, cmd = m.tasks.Update(msg)
+		m.tasksTable, cmd = m.tasksTable.Update(msg)
 
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
-			if msg.String() == "q" {
+			switch msg.String() {
+			case "q":
 				m.state = "menu"
+			case "enter":
+				row := m.tasksTable.SelectedRow()
+				if len(row) > 0 {
+					return m, tea.Printf("Issue: %s\n", row[0])
+				}
 			}
 		}
 		return m, cmd
@@ -567,7 +605,7 @@ func (m model) View() string {
 	case "licence":
 		return menuStyle.Render(m.licenceView())
 	case "tasks":
-		return tasksStyle.Render(m.tasks.View())
+		return tasksStyle.Render(m.tasksTableView())
 	case "config":
 		return configStyle.Render(m.configListView())
 	case "config-edit":
@@ -608,6 +646,14 @@ func (m model) licenceView() string {
 	b.WriteString("\n\n")
 	b.WriteString(helpStyle.Render("Press Q, ESC, or Enter to return to Settings"))
 
+	return b.String()
+}
+
+func (m model) tasksTableView() string {
+	var b strings.Builder
+	b.WriteString(tableBaseStyle.Render(m.tasksTable.View()))
+	b.WriteString("\n\n")
+	b.WriteString(helpStyle.Render("Arrow keys: navigate | Q: back to menu | Enter: view issue"))
 	return b.String()
 }
 
@@ -673,12 +719,11 @@ func (m model) fetchingView() string {
 	return b.String()
 }
 
-// ---------- List item for Jira tasks ----------
+// ---------- Helper functions ----------
 
-type item struct {
-	Issue jira.Issue
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen-3] + "..."
 }
-
-func (i item) Title() string       { return fmt.Sprintf("[%s] %s", i.Issue.Key, i.Issue.Title) }
-func (i item) Description() string { return i.Issue.Status }
-func (i item) FilterValue() string { return i.Issue.Key + " " + i.Issue.Title }

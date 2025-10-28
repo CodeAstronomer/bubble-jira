@@ -20,7 +20,7 @@ func DefaultConfig() *Config {
 		BaseURL:  "https://your-domain.atlassian.net",
 		Email:    "you@example.com",
 		APIToken: "your-atlassian-api-token",
-		JQL:      "assignee = currentuser() AND status != COMPLETE ORDER BY updated DESC",
+		JQL:      "assignee = currentuser() AND (status != Done AND status != Erledigt) ORDER BY updated DESC",
 	}
 }
 

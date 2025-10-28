@@ -19,6 +19,27 @@ type Issue struct {
 	HTMLURL string
 }
 
+// SearchResponse represents the full Jira search response with pagination.
+type SearchResponse struct {
+	Issues        []IssueData `json:"issues"`
+	NextPageToken string      `json:"nextPageToken"`
+	IsLast        bool        `json:"isLast"`
+}
+
+// IssueData represents a single issue in the search response.
+type IssueData struct {
+	Expand string `json:"expand"`
+	ID     string `json:"id"`
+	Self   string `json:"self"`
+	Key    string `json:"key"`
+	Fields struct {
+		Summary string `json:"summary"`
+		Status  struct {
+			Name string `json:"name"`
+		} `json:"status"`
+	} `json:"fields"`
+}
+
 // Client knows how to talk to Jira REST API.
 type Client struct {
 	cfg *config.Config
@@ -43,10 +64,10 @@ func (c *Client) FetchAssignedIssues(ctx context.Context) ([]Issue, error) {
 		return nil, err
 	}
 	// Build search URL
-	u.Path = strings.TrimRight(u.Path, "/") + "/rest/api/3/search"
+	u.Path = strings.TrimRight(u.Path, "/") + "/rest/api/3/search/jql"
 	q := url.Values{}
 	q.Set("jql", c.cfg.JQL)
-	q.Set("maxResults", "200")
+	q.Set("maxResults", "50")
 	q.Set("fields", "summary,status")
 	u.RawQuery = q.Encode()
 
@@ -56,7 +77,7 @@ func (c *Client) FetchAssignedIssues(ctx context.Context) ([]Issue, error) {
 	}
 	// Basic auth with email:apiToken
 	req.SetBasicAuth(c.cfg.Email, c.cfg.APIToken)
-    req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept", "application/json")
 
 	// Make the request
 	resp, err := c.hc.Do(req)
@@ -70,25 +91,15 @@ func (c *Client) FetchAssignedIssues(ctx context.Context) ([]Issue, error) {
 	}
 
 	// Parse the response JSON
-	var data struct {
-		Issues []struct {
-			Key    string `json:"key"`
-			Fields struct {
-				Summary string `json:"summary"`
-				Status  struct {
-					Name string `json:"name"`
-				} `json:"status"`
-			} `json:"fields"`
-		} `json:"issues"`
-	}
+	var response SearchResponse
 
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 
 	// Map to our Issue type
-	issues := make([]Issue, len(data.Issues))
-	for i, is := range data.Issues {
+	issues := make([]Issue, len(response.Issues))
+	for i, is := range response.Issues {
 		issues[i] = Issue{
 			Key:     is.Key,
 			Title:   is.Fields.Summary,
