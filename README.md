@@ -13,5 +13,13 @@ Key actions:
 
 Configuration is stored in `~/.config/bubble-jira/config.json`. Edit from the CLI or by hand.
 
-start:  `go run ./cmd/bubble-jira`
-*/
+start:  `go run .`
+
+### ~/.zshrc Alias
+
+Füge folgendes in deine `~/.zshrc` ein:
+
+```bash
+function jira() {
+  (cd ~/bubble-jira && go run .)
+}
