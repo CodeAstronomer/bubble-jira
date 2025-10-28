@@ -45,7 +45,7 @@ func (m model) updateMenu(msg tea.Msg) (tea.Model, tea.Cmd) {
 					menuItem{title: MenuLicenceTitle, enabled: true},
 					menuItem{title: MenuBackTitle, enabled: true},
 				}
-				m.settings = list.New(settingsItems, list.NewDefaultDelegate(), 40, 15)
+				m.settings = list.New(settingsItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
 				m.settings.Title = "Settings"
 				m.settings.SetShowHelp(true)
 				m.settings.SetShowPagination(false)
@@ -91,19 +91,29 @@ func (m model) updateSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // updateLicence handles license state updates
 func (m model) updateLicence(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case licenceLoadedMsg:
-		m.licenceContent = msg.content
-		m.licenceLoading = false
-		return m, nil
+    switch msg := msg.(type) {
+    case licenceLoadedMsg:
+        m.licenceContent = msg.content
+        m.licenceLoading = false
+        m.licenceOffset = 0
+        return m, nil
 
-	case tea.KeyMsg:
-		if msg.String() == "q" || msg.String() == "esc" || msg.String() == "enter" {
-			m.state = "settings"
-			m.licenceContent = ""
-		}
-	}
-	return m, nil
+    case tea.KeyMsg:
+        switch msg.String() {
+        case "q", "esc", "enter":
+            m.state = "settings"
+            m.licenceContent = ""
+        case "up":
+            m.licenceOffset--
+        case "down":
+            m.licenceOffset++
+        case "pgup":
+            m.licenceOffset -= terminalHeight / 2
+        case "pgdown":
+            m.licenceOffset += terminalHeight / 2
+        }
+    }
+    return m, nil
 }
 
 // updateFetching handles fetching state updates
@@ -120,47 +130,65 @@ func (m model) updateFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 		case issuesFetchedMsg:
-    		if msg.err != nil {
-    			m.fetching.error = msg.err.Error()
-    			m.fetching.done = true
-    			m.fetching.progress.SetPercent(1.0)
-    			m.state = "fetching"
-    			return m, nil
-    		}
+        	if msg.err != nil {
+        		m.fetching.error = msg.err.Error()
+        		m.fetching.done = true
+        		m.fetching.progress.SetPercent(1.0)
+        		m.state = "fetching"
+        		return m, nil
+        	}
 
-    		rows := make([]table.Row, len(msg.issues))
-    		for i, issue := range msg.issues {
-    			rows[i] = table.Row{
-    				issue.Key,
-    				truncateString(issue.Title, 40),
-    				issue.Status,
-    			}
-    		}
+        	rows := make([]table.Row, len(msg.issues))
 
-    		columns := []table.Column{
-    			{Title: "Key", Width: 12},
-    			{Title: "Title", Width: 40},
-    			{Title: "Status", Width: 15},
-    		}
+        	// Calculate column widths dynamically
+        	keyWidth := int(float64(terminalWidth) * 0.12)
+        	if keyWidth < 12 {
+        		keyWidth = 12
+        	}
 
-    		t := table.New(
-    			table.WithColumns(columns),
-    			table.WithRows(rows),
-    			table.WithFocused(true),
-    			table.WithHeight(15),
-    		)
+        	statusWidth := int(float64(terminalWidth) * 0.15)
+        	if statusWidth < 10 {
+        		statusWidth = 10
+        	}
 
-    		t.SetStyles(table.Styles{
-    			Header:   headerStyle,
-    			Selected: selectedStyle,
-    		})
+        	titleWidth := terminalWidth - keyWidth - statusWidth
+        	if titleWidth < 20 { // minimum title width
+        		titleWidth = 20
+        	}
 
-    		m.tasksTable = t
-    		m.fetching.progress.SetPercent(1.0)
-    		m.fetching.done = true
-    		m.fetching.status = "Complete!"
-    		m.state = "tasks"
-    		return m, nil
+        	// Populate table rows with truncated title based on column width
+        	for i, issue := range msg.issues {
+        		rows[i] = table.Row{
+        			issue.Key,
+        			truncateString(issue.Title, titleWidth/2), // rough char approximation
+        			issue.Status,
+        		}
+        	}
+
+        	columns := []table.Column{
+        		{Title: "Key", Width: keyWidth},
+        		{Title: "Title", Width: titleWidth},
+        		{Title: "Status", Width: statusWidth},
+        	}
+
+        	t := table.New(
+        		table.WithColumns(columns),
+        		table.WithRows(rows),
+        		table.WithFocused(true),
+        		table.WithHeight(15),
+        	)
+
+        	t.SetStyles(table.Styles{
+        		Header:   headerStyle,
+        		Selected: selectedStyle,
+        	})
+
+        	m.tasksTable = t
+        	m.fetching.progress.SetPercent(1.0)
+        	m.fetching.done = true
+        	m.fetching.status = "Complete!"
+        	m.state = "tasks"
+        	return m, nil
 
 	case spinner.TickMsg:
 		var cmd tea.Cmd
@@ -196,7 +224,7 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
 				contextItems := []list.Item{
 					contextMenuItem{title: ContextViewComments},
 				}
-				m.taskContextMenu = list.New(contextItems, list.NewDefaultDelegate(), 30, 10)
+				m.taskContextMenu = list.New(contextItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
 				m.taskContextMenu.Title = "Actions"
 				m.taskContextMenu.SetShowHelp(true)
 				m.taskContextMenu.SetShowPagination(false)
@@ -362,7 +390,7 @@ func (m model) updateConfigList(msg tea.Msg) (tea.Model, tea.Cmd) {
 				menuItem{title: MenuLicenceTitle, enabled: true},
 				menuItem{title: MenuBackTitle, enabled: true},
 			}
-			m.settings = list.New(settingsItems, list.NewDefaultDelegate(), 40, 15)
+			m.settings = list.New(settingsItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
 			m.settings.Title = "Settings"
 			m.settings.SetShowHelp(true)
 			m.settings.SetShowPagination(false)

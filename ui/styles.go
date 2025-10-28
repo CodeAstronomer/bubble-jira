@@ -2,9 +2,18 @@ package ui
 
 import (
 	"fmt"
-
+    "os"
 	"github.com/charmbracelet/lipgloss"
+	"golang.org/x/term"
 )
+
+func getTerminalSize() (int, int) {
+    width, height, err := term.GetSize(int(os.Stdout.Fd()))
+    if err != nil {
+        width = 80
+    }
+    return width, height
+}
 
 const (
 	MenuViewTasksTitle  = "View Tasks"
@@ -18,10 +27,15 @@ const (
 
 // Pre-computed style definitions
 var (
-	menuStyle          = lipgloss.NewStyle().Padding(1, 2)
-	tasksStyle         = lipgloss.NewStyle().Padding(1, 2)
-	fetchingStyle      = lipgloss.NewStyle().Padding(2, 4)
-	configStyle        = lipgloss.NewStyle().Padding(1, 2)
+    width, height      = getTerminalSize()
+    topBottomPadding   = 1
+    leftRightPadding   = 2
+    terminalWidth      = (width-(leftRightPadding*leftRightPadding))
+    terminalHeight      = (height-(topBottomPadding*topBottomPadding))
+	menuStyle          = lipgloss.NewStyle().Padding(topBottomPadding, leftRightPadding)
+	tasksStyle         = lipgloss.NewStyle().Padding(topBottomPadding, leftRightPadding)
+	fetchingStyle      = lipgloss.NewStyle().Padding(topBottomPadding, leftRightPadding)
+	configStyle        = lipgloss.NewStyle().Padding(topBottomPadding, leftRightPadding)
 	errorStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
 	focusedStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	blurredStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
@@ -35,7 +49,7 @@ var (
 	authorStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
 	timeStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("242")).Italic(true)
 	helpStyle      = blurredStyle
-	tableBaseStyle = lipgloss.NewStyle().
+	tableBaseStyle = lipgloss.NewStyle().Width(terminalWidth).
     BorderStyle(lipgloss.NormalBorder()).
     BorderForeground(lipgloss.Color("240"))
 	headerStyle = lipgloss.NewStyle().

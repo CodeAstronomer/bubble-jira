@@ -32,6 +32,7 @@ type model struct {
 	configValidError string
 	licenceContent   string
 	licenceLoading   bool
+	licenceOffset    int
 	comments         []jira.Comment
 	commentsLoading  bool
 	screenWidth      int
@@ -99,7 +100,7 @@ func newModel(cfg *config.Config, jc *jira.Client) model {
 		menuItem{title: MenuSettingsTitle, enabled: true},
 		menuItem{title: MenuQuitTitle, enabled: true},
 	}
-	menu := list.New(menuItems, list.NewDefaultDelegate(), 40, 15)
+	menu := list.New(menuItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
 	menu.Title = "Main Menu"
 	menu.SetShowHelp(true)
 	menu.SetShowPagination(false)
@@ -114,8 +115,8 @@ func newModel(cfg *config.Config, jc *jira.Client) model {
 		menu:             menu,
 		fetching:         newFetchingModel(),
 		commentsViewport: vp,
-		screenWidth:      200,
-		screenHeight:     50,
+		screenWidth:      terminalWidth,
+		screenHeight:     terminalHeight,
 	}
 }
 

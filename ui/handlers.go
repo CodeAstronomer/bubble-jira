@@ -18,7 +18,7 @@ func newFetchingModel() fetchingModel {
 
 	p := progress.New(
 		progress.WithDefaultGradient(),
-		progress.WithWidth(40),
+		progress.WithWidth(terminalWidth),
 		progress.WithoutPercentage(),
 	)
 
@@ -33,7 +33,7 @@ func newFetchingModel() fetchingModel {
 		},
 		currentStage: 0,
 		status:       "Connecting to Jira...",
-		width:        80,
+		width:        terminalWidth,
 	}
 }
 
@@ -51,7 +51,7 @@ func newConfigListEditor(cfg *config.Config) configListEditor {
 		items[i] = fields[i]
 	}
 
-	l := list.New(items, list.NewDefaultDelegate(), 50, 20)
+	l := list.New(items, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
 	l.Title = "Configuration"
 	l.SetShowHelp(true)
 	l.SetShowPagination(false)
