@@ -120,7 +120,12 @@ func parseCommentBody(bodyJSON string) string {
 
 // renderCommentsToMarkdown converts comments to markdown format
 func renderCommentsToMarkdown(comments []jira.Comment) string {
+	if len(comments) == 0 {
+		return "No Comments Found"
+	}
+
 	var result strings.Builder
+	result.Grow(len(comments) * 256) // Pre-allocate based on comment count
 
 	for _, comment := range comments {
 		authorName := comment.Author.DisplayName
@@ -128,21 +133,24 @@ func renderCommentsToMarkdown(comments []jira.Comment) string {
 			authorName = comment.Author.EmailAddress
 		}
 
-		result.WriteString("**" + authorName + "** - " + formatTime(comment.Created) + "\n\n")
+		result.WriteString("**")
+		result.WriteString(authorName)
+		result.WriteString("** - ")
+		result.WriteString(formatTime(comment.Created))
+		result.WriteString("\n\n")
 
 		// Convert body to JSON string for parsing
 		var bodyStr string
 		if comment.BodyJSON != "" {
 			bodyStr = comment.BodyJSON
 		} else if comment.Body != nil {
-			bodyBytes, err := json.Marshal(comment.Body)
-			if err == nil {
-				bodyStr = string(bodyBytes)
-			}
+			bodyBytes, _ := json.Marshal(comment.Body)
+			bodyStr = string(bodyBytes)
 		}
 
 		if bodyStr != "" {
-			result.WriteString(parseCommentBody(bodyStr) + "\n\n")
+			result.WriteString(parseCommentBody(bodyStr))
+			result.WriteString("\n\n")
 		}
 
 		result.WriteString("---\n\n")

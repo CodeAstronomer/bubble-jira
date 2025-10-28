@@ -47,8 +47,8 @@ func newConfigListEditor(cfg *config.Config) configListEditor {
 	}
 
 	items := make([]list.Item, len(fields))
-	for i, f := range fields {
-		items[i] = f
+	for i := range fields {
+		items[i] = fields[i]
 	}
 
 	l := list.New(items, list.NewDefaultDelegate(), 50, 20)

@@ -8,7 +8,6 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/glamour"
-	"github.com/charmbracelet/lipgloss"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -120,55 +119,48 @@ func (m model) updateFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case issuesFetchedMsg:
-		if msg.err != nil {
-			m.fetching.error = msg.err.Error()
-			m.fetching.done = true
-			m.fetching.progress.SetPercent(1.0)
-			m.state = "fetching"
-			return m, nil
-		}
+		case issuesFetchedMsg:
+    		if msg.err != nil {
+    			m.fetching.error = msg.err.Error()
+    			m.fetching.done = true
+    			m.fetching.progress.SetPercent(1.0)
+    			m.state = "fetching"
+    			return m, nil
+    		}
 
-		rows := make([]table.Row, len(msg.issues))
-		for i, issue := range msg.issues {
-			rows[i] = table.Row{
-				issue.Key,
-				truncateString(issue.Title, 40),
-				issue.Status,
-			}
-		}
+    		rows := make([]table.Row, len(msg.issues))
+    		for i, issue := range msg.issues {
+    			rows[i] = table.Row{
+    				issue.Key,
+    				truncateString(issue.Title, 40),
+    				issue.Status,
+    			}
+    		}
 
-		columns := []table.Column{
-			{Title: "Key", Width: 12},
-			{Title: "Title", Width: 40},
-			{Title: "Status", Width: 15},
-		}
+    		columns := []table.Column{
+    			{Title: "Key", Width: 12},
+    			{Title: "Title", Width: 40},
+    			{Title: "Status", Width: 15},
+    		}
 
-		t := table.New(
-			table.WithColumns(columns),
-			table.WithRows(rows),
-			table.WithFocused(true),
-			table.WithHeight(15),
-		)
+    		t := table.New(
+    			table.WithColumns(columns),
+    			table.WithRows(rows),
+    			table.WithFocused(true),
+    			table.WithHeight(15),
+    		)
 
-		s := table.DefaultStyles()
-		s.Header = s.Header.
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("240")).
-			BorderBottom(true).
-			Bold(false)
-		s.Selected = s.Selected.
-			Foreground(lipgloss.Color("229")).
-			Background(lipgloss.Color("57")).
-			Bold(false)
-		t.SetStyles(s)
+    		t.SetStyles(table.Styles{
+    			Header:   headerStyle,
+    			Selected: selectedStyle,
+    		})
 
-		m.tasksTable = t
-		m.fetching.progress.SetPercent(1.0)
-		m.fetching.done = true
-		m.fetching.status = "Complete!"
-		m.state = "tasks"
-		return m, nil
+    		m.tasksTable = t
+    		m.fetching.progress.SetPercent(1.0)
+    		m.fetching.done = true
+    		m.fetching.status = "Complete!"
+    		m.state = "tasks"
+    		return m, nil
 
 	case spinner.TickMsg:
 		var cmd tea.Cmd

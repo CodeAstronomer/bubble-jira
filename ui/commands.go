@@ -1,9 +1,8 @@
-
 package ui
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -52,22 +51,22 @@ func loadLicenceContent() (string, error) {
 	if err == nil {
 		projectRoot := filepath.Dir(execPath)
 		localLicencePath := filepath.Join(projectRoot, "LICENSE")
-		if data, err := ioutil.ReadFile(localLicencePath); err == nil {
+		if data, err := os.ReadFile(localLicencePath); err == nil {
 			return string(data), nil
 		}
 	}
 
 	// Try from current working directory
-	if data, err := ioutil.ReadFile("LICENSE"); err == nil {
+	if data, err := os.ReadFile("LICENSE"); err == nil {
 		return string(data), nil
 	}
 
 	// Try to fetch from GitHub
 	githubURL := "https://raw.githubusercontent.com/DavidBachDerEchte/bubble-jira/main/LICENSE"
 	resp, err := http.Get(githubURL)
-	if err == nil && resp.StatusCode == 200 {
+	if err == nil && resp.StatusCode == http.StatusOK {
 		defer resp.Body.Close()
-		if data, err := ioutil.ReadAll(resp.Body); err == nil {
+		if data, err := io.ReadAll(resp.Body); err == nil {
 			return string(data), nil
 		}
 	}
