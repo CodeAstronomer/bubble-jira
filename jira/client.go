@@ -2,7 +2,6 @@ package jira
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -35,6 +34,10 @@ func (c *Client) FetchAssignedIssues(ctx context.Context) ([]Issue, error) {
 	if c.cfg == nil {
 		return nil, fmt.Errorf("nil config")
 	}
+	if !c.cfg.IsValid() {
+		return nil, fmt.Errorf("config is not valid - please fill all required fields")
+	}
+
 	u, err := url.Parse(c.cfg.BaseURL)
 	if err != nil {
 		return nil, err
@@ -52,9 +55,8 @@ func (c *Client) FetchAssignedIssues(ctx context.Context) ([]Issue, error) {
 		return nil, err
 	}
 	// Basic auth with email:apiToken
-	token := base64.StdEncoding.EncodeToString([]byte(c.cfg.Email + ":" + c.cfg.APIToken))
-	req.Header.Set("Authorization", "Basic "+token)
-	req.Header.Set("Accept", "application/json")
+	req.SetBasicAuth(c.cfg.Email, c.cfg.APIToken)
+    req.Header.Set("Accept", "application/json")
 
 	// Make the request
 	resp, err := c.hc.Do(req)

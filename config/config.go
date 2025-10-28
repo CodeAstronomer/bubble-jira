@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 // Config holds Jira connection settings.
@@ -20,8 +19,8 @@ func DefaultConfig() *Config {
 	return &Config{
 		BaseURL:  "https://your-domain.atlassian.net",
 		Email:    "you@example.com",
-		APIToken: "",
-		JQL:      "assignee = currentuser() ORDER BY updated DESC",
+		APIToken: "your-atlassian-api-token",
+		JQL:      "assignee = currentuser() AND status != COMPLETE ORDER BY updated DESC",
 	}
 }
 
@@ -82,39 +81,15 @@ func Load() (*Config, error) {
 	return &cfg, nil
 }
 
-// ---------- Config Editor helpers ----------
-
-type ConfigField struct {
-	Key   string
-	Value string
-}
-
-func (cf ConfigField) Title() string       { return cf.Key }
-func (cf ConfigField) Description() string { return cf.Value }
-func (cf ConfigField) FilterValue() string { return cf.Key }
-
-func (c *Config) ToFields() []ConfigField {
-	return []ConfigField{
-		{"Base URL", c.BaseURL},
-		{"Email", c.Email},
-		{"API Token", c.APIToken},
-		{"JQL Query", c.JQL},
+// IsValid checks if the config has all required fields properly filled
+func (c *Config) IsValid() bool {
+	if c.BaseURL == "" || c.Email == "" || c.APIToken == "" || c.JQL == "" {
+		return false
 	}
-}
 
-func (c *Config) UpdateFromFields(fields []ConfigField) error {
-	for _, field := range fields {
-		switch strings.ToLower(field.Key) {
-		case "base url":
-			c.BaseURL = field.Value
-		case "email":
-			c.Email = field.Value
-		case "api token":
-			c.APIToken = field.Value
-		case "jql query":
-			c.JQL = field.Value
-		}
+	if c.BaseURL == "https://your-domain.atlassian.net" && c.Email == "you@example.com" && c.APIToken == "your-atlassian-api-token" {
+		return false
 	}
-	// Persist immediately
-	return Save(c)
+
+	return true
 }

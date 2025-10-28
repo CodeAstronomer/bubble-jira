@@ -1,13 +1,21 @@
 package ui
 
 import (
+    "context"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"bubble-jira/config"
 	"bubble-jira/jira"
 
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/progress"
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -34,17 +42,76 @@ func (pr *Program) Quit() {
 
 // ---------- Menu & Models ----------
 
-type menuItem string
+type menuItem struct {
+	title   string
+	enabled bool
+}
 
 const (
-	MenuViewTasks  menuItem = "View Jira Tasks"
-	MenuEditConfig menuItem = "Edit Config"
-	MenuQuit       menuItem = "Quit"
+	MenuViewTasksTitle     = "View Jira Tasks"
+	MenuSettingsTitle      = "Settings"
+	MenuQuitTitle          = "Quit"
+	MenuConfigTitle        = "Edit Config"
+	MenuLicenceTitle       = "LICENSE"
+	MenuBackTitle          = "Back to Main Menu"
 )
 
-func (m menuItem) Title() string       { return string(m) }
+func (m menuItem) Title() string       { return m.title }
 func (m menuItem) Description() string { return "" }
-func (m menuItem) FilterValue() string { return string(m) }
+func (m menuItem) FilterValue() string { return m.title }
+
+// ---------- Loading / Fetching messages ----------
+
+type issuesFetchedMsg struct {
+	issues []jira.Issue
+	err    error
+}
+
+type licenceLoadedMsg struct {
+	content string
+	err     error
+}
+
+type tickMsg time.Time
+
+// ---------- Fetching model ----------
+
+type fetchingModel struct {
+	spinner   spinner.Model
+	progress  progress.Model
+	stages    []string
+	currentStage int
+	status    string
+	error     string
+	done      bool
+	width     int
+}
+
+func newFetchingModel() fetchingModel {
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
+
+	p := progress.New(
+		progress.WithDefaultGradient(),
+		progress.WithWidth(40),
+		progress.WithoutPercentage(),
+	)
+
+	return fetchingModel{
+		spinner: s,
+		progress: p,
+		stages: []string{
+			"Connecting to Jira...",
+			"Authenticating...",
+			"Fetching tasks...",
+			"Processing results...",
+		},
+		currentStage: 0,
+		status: "Connecting to Jira...",
+		width: 80,
+	}
+}
 
 // ---------- Config Editor ----------
 
@@ -54,6 +121,10 @@ var (
 	focusedButton = focusedStyle.Render("[ Save ]")
 	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Save"))
 	noStyle      = lipgloss.NewStyle()
+	errorStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
+	successStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("42"))
+	checkMark    = successStyle.Render("✓")
+	warningStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
 )
 
 type configField struct {
@@ -123,13 +194,18 @@ func newConfigInputEditor(key, value string) configInputEditor {
 type model struct {
 	cfg              *config.Config
 	jc               *jira.Client
-	state            string // "menu" | "tasks" | "config" | "config-edit"
+	state            string
 	menu             list.Model
+	settings         list.Model
 	tasks            list.Model
 	configList       configListEditor
 	configInput      configInputEditor
+	fetching         fetchingModel
 	statusBar        string
 	editingFieldIdx  int
+	configValidError string
+	licenceContent   string
+	licenceLoading   bool
 }
 
 // Lipgloss styles
@@ -137,14 +213,15 @@ var (
 	menuStyle     = lipgloss.NewStyle().Padding(1, 2)
 	tasksStyle    = lipgloss.NewStyle().Padding(1, 2)
 	configStyle   = lipgloss.NewStyle().Padding(1, 2)
+	fetchingStyle = lipgloss.NewStyle().Padding(2, 4)
 	helpStyle     = blurredStyle
 )
 
 func initialModel(cfg *config.Config, jc *jira.Client) model {
 	menuItems := []list.Item{
-		MenuViewTasks,
-		MenuEditConfig,
-		MenuQuit,
+		menuItem{title: MenuViewTasksTitle, enabled: cfg.IsValid()},
+		menuItem{title: MenuSettingsTitle, enabled: true},
+		menuItem{title: MenuQuitTitle, enabled: true},
 	}
 	menu := list.New(menuItems, list.NewDefaultDelegate(), 40, 15)
 	menu.Title = "Main Menu"
@@ -152,11 +229,63 @@ func initialModel(cfg *config.Config, jc *jira.Client) model {
 	menu.SetShowPagination(false)
 
 	return model{
-		cfg:   cfg,
-		jc:    jc,
-		state: "menu",
-		menu:  menu,
+		cfg:     cfg,
+		jc:      jc,
+		state:   "menu",
+		menu:    menu,
+		fetching: newFetchingModel(),
 	}
+}
+
+// ---------- Commands ----------
+
+func fetchJiraTasksCmd(jc *jira.Client) tea.Cmd {
+	return func() tea.Msg {
+		issues, err := jc.FetchAssignedIssues(context.Background())
+		return issuesFetchedMsg{issues: issues, err: err}
+	}
+}
+
+func tickFetchCmd() tea.Cmd {
+	return tea.Tick(500*time.Millisecond, func(t time.Time) tea.Msg {
+		return tickMsg(t)
+	})
+}
+
+func loadLicenceCmd() tea.Cmd {
+	return func() tea.Msg {
+		content, err := loadLicenceContent()
+		return licenceLoadedMsg{content: content, err: err}
+	}
+}
+
+func loadLicenceContent() (string, error) {
+	// Try to load from local LICENSE file first
+	execPath, err := os.Executable()
+	if err == nil {
+		projectRoot := filepath.Dir(execPath)
+		localLicencePath := filepath.Join(projectRoot, "LICENSE")
+		if data, err := ioutil.ReadFile(localLicencePath); err == nil {
+			return string(data), nil
+		}
+	}
+
+	// Try from current working directory
+	if data, err := ioutil.ReadFile("LICENSE"); err == nil {
+		return string(data), nil
+	}
+
+	// Try to fetch from GitHub
+	githubURL := "https://raw.githubusercontent.com/DavidBachDerEchte/bubble-jira/main/LICENSE"
+	resp, err := http.Get(githubURL)
+	if err == nil && resp.StatusCode == 200 {
+		defer resp.Body.Close()
+		if data, err := ioutil.ReadAll(resp.Body); err == nil {
+			return string(data), nil
+		}
+	}
+
+	return "License file not found. Please ensure LICENSE file exists in the project root or is available on GitHub.", nil
 }
 
 // ---------- Bubble Tea implementation ----------
@@ -175,32 +304,140 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyMsg:
 			if msg.String() == "enter" {
 				selected := m.menu.SelectedItem()
-				switch selected.(menuItem) {
-				case MenuViewTasks:
-					issues, err := m.jc.FetchAssignedIssues(nil)
-					if err != nil {
-						m.statusBar = "Error fetching tasks: " + err.Error()
-						return m, nil
+				menuItemSelected := selected.(menuItem)
+
+				// Check if item is enabled
+				if !menuItemSelected.enabled && menuItemSelected.title == MenuViewTasksTitle {
+					m.configValidError = "⚠ Config incomplete! Please fill all fields in Settings > Edit Config first."
+					return m, nil
+				}
+
+				switch menuItemSelected.title {
+				case MenuViewTasksTitle:
+					m.state = "fetching"
+					m.fetching = newFetchingModel()
+					m.configValidError = ""
+					return m, tea.Batch(
+						fetchJiraTasksCmd(m.jc),
+						tickFetchCmd(),
+						m.fetching.spinner.Tick,
+					)
+				case MenuSettingsTitle:
+					m.state = "settings"
+					m.configValidError = ""
+					settingsItems := []list.Item{
+						menuItem{title: MenuConfigTitle, enabled: true},
+						menuItem{title: MenuLicenceTitle, enabled: true},
+						menuItem{title: MenuBackTitle, enabled: true},
 					}
-					items := make([]list.Item, len(issues))
-					for i, is := range issues {
-						items[i] = item{Issue: is}
-					}
-					tasksList := list.New(items, list.NewDefaultDelegate(), 0, 0)
-					tasksList.Title = "Assigned Jira Tasks"
-					tasksList.SetShowHelp(false)
-					tasksList.SetShowPagination(false)
-					m.tasks = tasksList
-					m.state = "tasks"
-				case MenuEditConfig:
-					m.configList = newConfigListEditor(m.cfg)
-					m.state = "config"
-				case MenuQuit:
+					m.settings = list.New(settingsItems, list.NewDefaultDelegate(), 40, 15)
+					m.settings.Title = "Settings"
+					m.settings.SetShowHelp(true)
+					m.settings.SetShowPagination(false)
+				case MenuQuitTitle:
 					return m, tea.Quit
 				}
 			}
 		}
 		return m, cmd
+
+	case "settings":
+		var cmd tea.Cmd
+		m.settings, cmd = m.settings.Update(msg)
+
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			if msg.String() == "enter" {
+				selected := m.settings.SelectedItem()
+				menuItemSelected := selected.(menuItem)
+
+				switch menuItemSelected.title {
+				case MenuConfigTitle:
+					m.configList = newConfigListEditor(m.cfg)
+					m.state = "config"
+					return m, nil
+				case MenuLicenceTitle:
+					m.licenceLoading = true
+					m.state = "licence"
+					return m, loadLicenceCmd()
+				case MenuBackTitle:
+					m.state = "menu"
+					return m, nil
+				}
+			} else if msg.String() == "q" || msg.String() == "esc" {
+				m.state = "menu"
+			}
+		}
+		return m, cmd
+
+	case "licence":
+		switch msg := msg.(type) {
+		case licenceLoadedMsg:
+			m.licenceContent = msg.content
+			m.licenceLoading = false
+			return m, nil
+
+		case tea.KeyMsg:
+			if msg.String() == "q" || msg.String() == "esc" || msg.String() == "enter" {
+				m.state = "settings"
+				m.licenceContent = ""
+			}
+		}
+		return m, nil
+
+	case "fetching":
+		switch msg := msg.(type) {
+		case tickMsg:
+			// Advance progress stages
+			if m.fetching.currentStage < len(m.fetching.stages)-1 {
+				m.fetching.currentStage++
+				percent := float64(m.fetching.currentStage) / float64(len(m.fetching.stages))
+				progressCmd := m.fetching.progress.SetPercent(percent)
+				m.fetching.status = m.fetching.stages[m.fetching.currentStage]
+				return m, tea.Batch(tickFetchCmd(), progressCmd)
+			}
+			return m, nil
+
+		case issuesFetchedMsg:
+			if msg.err != nil {
+				m.fetching.error = msg.err.Error()
+				m.fetching.done = true
+				m.fetching.progress.SetPercent(1.0)
+				m.state = "fetching"
+				return m, nil
+			}
+
+			items := make([]list.Item, len(msg.issues))
+			for i, is := range msg.issues {
+				items[i] = item{Issue: is}
+			}
+			tasksList := list.New(items, list.NewDefaultDelegate(), 0, 0)
+			tasksList.Title = fmt.Sprintf("Assigned Jira Tasks (%d)", len(msg.issues))
+			tasksList.SetShowHelp(false)
+			tasksList.SetShowPagination(false)
+			m.tasks = tasksList
+			m.fetching.progress.SetPercent(1.0)
+			m.fetching.done = true
+			m.fetching.status = "Complete!"
+			m.state = "tasks"
+			return m, nil
+
+		case spinner.TickMsg:
+			var cmd tea.Cmd
+			m.fetching.spinner, cmd = m.fetching.spinner.Update(msg)
+			return m, cmd
+
+		case progress.FrameMsg:
+			newProgress, cmd := m.fetching.progress.Update(msg)
+			m.fetching.progress = newProgress.(progress.Model)
+			return m, cmd
+
+		case tea.KeyMsg:
+			if msg.String() == "q" || msg.String() == "esc" {
+				m.state = "menu"
+			}
+		}
+		return m, nil
 
 	case "tasks":
 		var cmd tea.Cmd
@@ -229,7 +466,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 
 			case "q", "esc":
-				m.state = "menu"
+				m.state = "settings"
+				// Refresh menu items enabled state
+				settingsItems := []list.Item{
+					menuItem{title: MenuConfigTitle, enabled: true},
+					menuItem{title: MenuLicenceTitle, enabled: true},
+					menuItem{title: MenuBackTitle, enabled: true},
+				}
+				m.settings = list.New(settingsItems, list.NewDefaultDelegate(), 40, 15)
+				m.settings.Title = "Settings"
+				m.settings.SetShowHelp(true)
+				m.settings.SetShowPagination(false)
 				return m, nil
 			}
 		}
@@ -310,16 +557,58 @@ func (m *model) updateConfig() {
 func (m model) View() string {
 	switch m.state {
 	case "menu":
-		return menuStyle.Render(m.menu.View())
+		view := m.menu.View()
+		if m.configValidError != "" {
+			view = view + "\n\n" + errorStyle.Render(m.configValidError)
+		}
+		return menuStyle.Render(view)
+	case "settings":
+		return menuStyle.Render(m.settings.View())
+	case "licence":
+		return menuStyle.Render(m.licenceView())
 	case "tasks":
 		return tasksStyle.Render(m.tasks.View())
 	case "config":
 		return configStyle.Render(m.configListView())
 	case "config-edit":
 		return configStyle.Render(m.configInputView())
+	case "fetching":
+		return fetchingStyle.Render(m.fetchingView())
 	default:
 		return "Unknown state"
 	}
+}
+
+func (m model) licenceView() string {
+	var b strings.Builder
+
+	if m.licenceLoading {
+		b.WriteString("Loading licence information...\n")
+		return b.String()
+	}
+
+	// Split content into lines and show with scrollable view
+	lines := strings.Split(m.licenceContent, "\n")
+
+	// Limit to 20 lines for terminal view, show first 20 lines
+	maxLines := 1000
+	if len(lines) > maxLines {
+		for i := 0; i < maxLines; i++ {
+			b.WriteString(lines[i])
+			b.WriteString("\n")
+		}
+		b.WriteString("\n")
+		b.WriteString(warningStyle.Render(fmt.Sprintf("... (%d more lines)", len(lines)-maxLines)))
+	} else {
+		b.WriteString(m.licenceContent)
+	}
+
+	b.WriteString("\n\n")
+	b.WriteString(strings.Repeat("─", 50))
+	b.WriteString("\n\n")
+	b.WriteString(helpStyle.Render("Press Q, ESC, or Enter to return to Settings"))
+
+	return b.String()
 }
 
 func (m model) configListView() string {
@@ -346,6 +635,40 @@ func (m model) configInputView() string {
 	b.WriteString(fmt.Sprintf("%s\n\n", *button))
 
 	b.WriteString(helpStyle.Render("Arrow Up/Down: navigate | Enter: confirm | Esc: cancel"))
+
+	return b.String()
+}
+
+func (m model) fetchingView() string {
+	var b strings.Builder
+
+	// Title
+	b.WriteString("Fetching Jira Tasks\n")
+	b.WriteString(strings.Repeat("─", 40))
+	b.WriteString("\n\n")
+
+	// Status with spinner
+	spin := m.fetching.spinner.View()
+	statusText := fmt.Sprintf("%s %s", spin, m.fetching.status)
+	b.WriteString(statusText)
+	b.WriteString("\n\n")
+
+	// Progress bar
+	b.WriteString(m.fetching.progress.View())
+	b.WriteString("\n\n")
+
+	// Error message if any
+	if m.fetching.error != "" {
+		b.WriteString(errorStyle.Render("✗ Error: " + m.fetching.error))
+		b.WriteString("\n\n")
+		b.WriteString(helpStyle.Render("Press Q or ESC to return to menu"))
+	} else if m.fetching.done {
+		b.WriteString(successStyle.Render(checkMark + " Tasks fetched successfully!"))
+		b.WriteString("\n\n")
+		b.WriteString(helpStyle.Render("Press Q to return to menu or view tasks"))
+	} else {
+		b.WriteString(helpStyle.Render("Press Q or ESC to cancel"))
+	}
 
 	return b.String()
 }

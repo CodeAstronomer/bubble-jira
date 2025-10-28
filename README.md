@@ -13,5 +13,5 @@ Key actions:
 
 Configuration is stored in `~/.config/bubble-jira/config.json`. Edit from the CLI or by hand.
 
-
+start:  `go run ./cmd/bubble-jira`
 */
