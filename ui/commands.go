@@ -9,7 +9,6 @@ import (
     "path/filepath"
     "strings"
     "time"
-    "fmt"
 
 	"bubble-jira/jira"
 

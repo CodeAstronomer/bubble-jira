@@ -3,8 +3,17 @@ package ui
 
 import (
     "strings"
+    "fmt"
 	"github.com/charmbracelet/lipgloss"
 )
+
+
+func repeatNewline(n int) string {
+	if n <= 0 {
+		return ""
+	}
+	return strings.Repeat("\n", n)
+}
 
 // licenceView renders the licence view
 func (m model) licenceView() string {
@@ -76,9 +85,23 @@ func (m model) commentsView() string {
 	var content strings.Builder
 	content.Grow(m.screenWidth * 10)
 	content.WriteString(m.commentsViewport.View())
-	content.WriteString("\n")
-	content.WriteString(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": scroll • "+ keyExitKeysStr +": back"))
-	return content.String()
+
+    // Footer
+    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": scroll • "+ keyExitKeysStr +": back"))
+
+    // Dynamisch leere Zeilen berechnen, um Footer nach unten zu schieben
+    contentHeight := lipgloss.Height(content.String())
+    footerHeight := lipgloss.Height(footer)
+    emptyLines := terminalHeight - contentHeight - footerHeight
+    if emptyLines < 0 {
+        emptyLines = 0
+    }
+
+    // Endgültige Ausgabe
+    return lipgloss.NewStyle().
+        Width(terminalWidth).
+        Height(terminalHeight).
+        Render(fmt.Sprintf("%s%s\n%s", content.String(), repeatNewline(emptyLines), footer))
 }
 
 // configListView renders the config list view
@@ -102,11 +125,27 @@ func (m model) configInputView() string {
     } else {
         content.WriteString(blurredButton)
     }
-    content.WriteString("\n\n")
-    content.WriteString(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": navigate • "+ keyMap[keyEnter] +": confirm • "+ keyExitKeysStr +": cancel"))
 
+    // Footer
+    footer := lipgloss.NewStyle().Faint(true).Render(
+        keyMap[keyUp]+"/"+keyMap[keyDown]+": navigate • "+
+            keyMap[keyEnter]+": confirm • "+
+            keyExitKeysStr+": cancel",
+    )
 
-	return content.String()
+    // Dynamisch leere Zeilen berechnen, um Footer nach unten zu schieben
+    contentHeight := lipgloss.Height(content.String())
+    footerHeight := lipgloss.Height(footer)
+    emptyLines := terminalHeight - contentHeight - footerHeight
+    if emptyLines < 0 {
+        emptyLines = 0
+    }
+
+    // Endgültige Ausgabe
+    return lipgloss.NewStyle().
+        Width(terminalWidth).
+        Height(terminalHeight).
+        Render(fmt.Sprintf("%s%s\n%s", content.String(), repeatNewline(emptyLines), footer))
 }
 
 // commitInputViewGit renders the git commit input screen
@@ -123,15 +162,26 @@ func (m model) commitInputViewGit() string {
     m.commitInput.input.Prompt = ""
     content.WriteString(m.commitInput.input.View())
 
-    content.WriteString("\n\n")
-    content.WriteString(
-        lipgloss.NewStyle().Faint(true).Render(
-            keyMap[keyUp] + "/" + keyMap[keyDown] + ": navigate • " +
-                keyMap[keyEnter] + ": confirm • " + keyExitKeysStr + ": cancel",
-        ),
+    // Footer
+    footer := lipgloss.NewStyle().Faint(true).Render(
+        keyMap[keyUp]+"/"+keyMap[keyDown]+": navigate • "+
+            keyMap[keyEnter]+": confirm • "+
+            keyExitKeysStr+": cancel",
     )
 
-    return content.String()
+    // Dynamisch leere Zeilen berechnen, um Footer nach unten zu schieben
+    contentHeight := lipgloss.Height(content.String())
+    footerHeight := lipgloss.Height(footer)
+    emptyLines := terminalHeight - contentHeight - footerHeight
+    if emptyLines < 0 {
+        emptyLines = 0
+    }
+
+    // Endgültige Ausgabe
+    return lipgloss.NewStyle().
+        Width(terminalWidth).
+        Height(terminalHeight).
+        Render(fmt.Sprintf("%s%s\n%s", content.String(), repeatNewline(emptyLines), footer))
 }
 
 // commitInputViewStatus
@@ -153,13 +203,24 @@ func (m model) commitInputViewStatus() string {
 		content.WriteString("\n")
 	}
 
-	content.WriteString("\n\n")
-    content.WriteString(
-        lipgloss.NewStyle().Faint(true).Render(
-            keyMap[keyUp] + "/" + keyMap[keyDown] + ": navigate • " +
-                keyMap[keyEnter] + ": confirm • " + keyExitKeysStr + ": cancel",
-        ),
+    // Footer
+    footer := lipgloss.NewStyle().Faint(true).Render(
+        keyMap[keyUp]+"/"+keyMap[keyDown]+": navigate • "+
+            keyMap[keyEnter]+": confirm • "+
+            keyExitKeysStr+": cancel",
     )
 
-	return content.String()
+    // Dynamisch leere Zeilen berechnen, um Footer nach unten zu schieben
+    contentHeight := lipgloss.Height(content.String())
+    footerHeight := lipgloss.Height(footer)
+    emptyLines := terminalHeight - contentHeight - footerHeight
+    if emptyLines < 0 {
+        emptyLines = 0
+    }
+
+    // Endgültige Ausgabe
+    return lipgloss.NewStyle().
+        Width(terminalWidth).
+        Height(terminalHeight).
+        Render(fmt.Sprintf("%s%s\n%s", content.String(), repeatNewline(emptyLines), footer))
 }
