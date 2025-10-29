@@ -16,6 +16,8 @@ func getTerminalSize() (int, int) {
 }
 
 const (
+    AppVersion = "1.0.0"
+
 	MenuViewTasksTitle  = "View Tasks"
 	MenuSettingsTitle   = "Settings"
 	MenuQuitTitle       = "Quit"

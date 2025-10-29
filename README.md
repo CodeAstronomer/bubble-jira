@@ -21,5 +21,5 @@ Füge folgendes in deine `~/.zshrc` ein:
 
 ```bash
 function jira() {
-  (cd ~/bubble-jira && go run .)
+  (cd ~/bubble-jira && go run . "$@")
 }

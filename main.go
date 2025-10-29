@@ -11,9 +11,29 @@ import (
 )
 
 func main() {
-	// Parse CLI flags
+	// Define CLI flags
+	helpFlag := flag.Bool("help", false, "Show help message")
+    flag.BoolVar(helpFlag, "h", false, "Show help message (shorthand)")
+
+	versionFlag := flag.Bool("v", false, "Show version")
 	taskFlag := flag.Bool("t", false, "Directly start in Task List View")
+
 	flag.Parse()
+
+    // Handle help/version flags BEFORE running the program
+    if *helpFlag {
+        fmt.Println("Usage: jira [flags]")
+        fmt.Println("Flags:")
+        fmt.Println("  --help/ -h       Show this help message")
+        fmt.Println("  -v           Show version")
+        fmt.Println("  -t           Start directly in Task List View")
+        return
+    }
+
+    if *versionFlag {
+		fmt.Println("jira version", ui.AppVersion)
+        return
+    }
 
 	// Load config
 	cfg, err := config.Load()
