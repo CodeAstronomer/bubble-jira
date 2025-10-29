@@ -14,6 +14,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+type startTasksMsg struct{}
+
 // model represents the main application model
 type model struct {
 	cfg              *config.Config
@@ -137,6 +139,19 @@ func (m model) Init() tea.Cmd {
 
 // Update handles all user input and messages
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg.(type) {
+	case startTasksMsg:
+		m.state = "fetching"
+		m.fetching = newFetchingModel()
+		m.configValidError = ""
+		return m, tea.Batch(
+			fetchJiraTasksCmd(m.jc),
+			tickFetchCmd(),
+			m.fetching.spinner.Tick,
+		)
+	}
+
+    // fallback to normal update logic
 	switch m.state {
 	case "menu":
 		return m.updateMenu(msg)

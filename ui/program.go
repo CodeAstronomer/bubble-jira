@@ -28,3 +28,22 @@ func (pr *Program) Start() error {
 func (pr *Program) Quit() {
 	pr.p.Send(tea.Quit)
 }
+
+func (pr *Program) StartWithTasks(cfg *config.Config, jc *jira.Client) error {
+	// Create model in fetching state
+	m := newModel(cfg, jc)
+	m.state = "fetching"
+	m.fetching = newFetchingModel()
+	m.configValidError = ""
+
+	// Create the program
+	pr.p = tea.NewProgram(m, tea.WithAltScreen())
+
+	// Trigger the fetch commands immediately after start
+	go func() {
+		pr.p.Send(startTasksMsg{})
+	}()
+
+	// Start the program
+	return pr.p.Start()
+}

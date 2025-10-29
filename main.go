@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"flag"
 
 	"bubble-jira/config"
 	"bubble-jira/jira"
@@ -10,6 +11,10 @@ import (
 )
 
 func main() {
+	// Parse CLI flags
+	taskFlag := flag.Bool("t", false, "Directly start in Task List View")
+	flag.Parse()
+
 	// Load config
 	cfg, err := config.Load()
 	if err != nil {
@@ -22,6 +27,14 @@ func main() {
 
 	// Create Bubble Tea program
 	pr := ui.NewProgram(cfg, jc)
+
+    if *taskFlag {
+    	if err := pr.StartWithTasks(cfg, jc); err != nil {
+    		fmt.Println("Error running program:", err)
+    		os.Exit(1)
+    	}
+    	return
+    }
 
 	// Start TUI
 	if err := pr.Start(); err != nil {
