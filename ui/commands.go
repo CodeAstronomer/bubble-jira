@@ -97,14 +97,17 @@ func fetchCommentsBackgroundCmd(jc *jira.Client, taskKey string) tea.Cmd {
     }
 }
 
-func checkGitChanges() bool {
+// checkGitChanges prüft, ob im aktuellen Git-Repository Änderungen vorhanden sind
+func checkGitChanges(dir string) bool {
     cmd := exec.Command("git", "status", "--porcelain")
+    cmd.Dir = dir
     out, err := cmd.Output()
     if err != nil {
         return false
     }
     return len(strings.TrimSpace(string(out))) > 0
 }
+
 
 func runGitCommitAndPush(message string) error {
     /* commit := exec.Command("git", "commit", "-am", message)

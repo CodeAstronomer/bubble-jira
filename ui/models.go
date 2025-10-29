@@ -47,6 +47,7 @@ type model struct {
     cachedComments   map[string][]jira.Comment
     fetchingComments bool
     statusMessage    string
+    workDir          string
     commitInput struct {
     	input     textinput.Model
         focusSave bool

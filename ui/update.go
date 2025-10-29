@@ -3,10 +3,11 @@ package ui
 import (
 	"bubble-jira/jira"
     "fmt"
-    "os"
     "log"
     "strings"
     "time"
+    "os"
+    "path/filepath"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/progress"
@@ -332,18 +333,21 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
                 m.hoverTimer = nil
             }
 
-            if _, err := os.Stat(".git"); os.IsNotExist(err) {
+            key := row[0]
+            title := row[1]
+
+            if _, err := os.Stat(filepath.Join(m.workDir, ".git")); os.IsNotExist(err) {
+                fmt.Println("\nNo Git repository found. Please initialize or clone a repo first.")
                 m.statusMessage = "No Git repository found. Please initialize or clone a repo first."
                 return m, nil
             }
 
-            if !checkGitChanges() {
+            if !checkGitChanges(m.workDir) {
+                fmt.Println("\nNo changes to commit.")
+                fmt.Println(m.workDir)
                 m.statusMessage = "No changes to commit."
                 return m, nil
             }
-
-            key := row[0]
-            title := row[1]
 
             // Log vor Commit-Input
             log.Println("Preparing git commit for issue:", key, "with default title:", title)
@@ -355,7 +359,7 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
                 key       string
                 title     string
             }{
-                input: textinput.New(),
+                input:     textinput.New(),
                 focusSave: false,
                 key:       key,
                 title:     title,

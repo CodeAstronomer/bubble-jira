@@ -11,6 +11,13 @@ import (
 )
 
 func main() {
+    var workDir string
+    if len(os.Args) > 1 {
+        workDir = os.Args[len(os.Args)-1]
+    } else {
+        workDir, _ = os.Getwd()
+    }
+
 	// Define CLI flags
 	helpFlag := flag.Bool("help", false, "Show help message")
     flag.BoolVar(helpFlag, "h", false, "Show help message (shorthand)")
@@ -46,10 +53,10 @@ func main() {
 	jc := jira.NewClient(cfg)
 
 	// Create Bubble Tea program
-	pr := ui.NewProgram(cfg, jc)
+	pr := ui.NewProgram(cfg, jc, workDir)
 
     if *taskFlag {
-    	if err := pr.StartWithTasks(cfg, jc); err != nil {
+    	if err := pr.StartWithTasks(cfg, jc, workDir); err != nil {
     		fmt.Println("Error running program:", err)
     		os.Exit(1)
     	}
