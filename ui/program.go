@@ -1,23 +1,10 @@
 package ui
 
 import (
-	"bubble-jira/config"
 	"bubble-jira/jira"
+	"bubble-jira/config"
 
 	tea "github.com/charmbracelet/bubbletea"
-)
-
-var (
-	cfg = config.DefaultConfig()
-	exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter = cfg.GetKeys()
-
-	keyMap = map[string]string{
-        keyUp:            "↑",
-        keyDown:          "↓",
-        keyFastDown:      "pgDown",
-        keyFastUp:        "pgUp",
-        keyEnter:         "⏎",
-    }
 )
 
 // Program wraps the bubbletea program

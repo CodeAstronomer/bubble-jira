@@ -1,38 +1,12 @@
 package ui
 
 import (
-	"fmt"
-    "os"
+    "fmt"
 	"github.com/charmbracelet/lipgloss"
-	"golang.org/x/term"
-)
-
-func getTerminalSize() (int, int) {
-    width, height, err := term.GetSize(int(os.Stdout.Fd()))
-    if err != nil {
-        width = 80
-    }
-    return width, height
-}
-
-const (
-	MenuViewTasksTitle  = "View Tasks"
-	MenuSettingsTitle   = "Settings"
-	MenuQuitTitle       = "Quit"
-	MenuConfigTitle     = "Edit Config"
-	MenuLicenceTitle    = "View Licence"
-
-	MenuBackTitle       = "Back"
-	ContextViewComments = "View Comments"
 )
 
 // Pre-computed style definitions
 var (
-    width, height      = getTerminalSize()
-    topBottomPadding   = 1
-    leftRightPadding   = 2
-    terminalWidth      = (width-(leftRightPadding*leftRightPadding))
-    terminalHeight     = (height-(topBottomPadding*topBottomPadding))
 	menuStyle          = lipgloss.NewStyle().Padding(topBottomPadding, leftRightPadding)
 	tasksStyle         = lipgloss.NewStyle().Padding(topBottomPadding, leftRightPadding)
 	fetchingStyle      = lipgloss.NewStyle().Padding(topBottomPadding, leftRightPadding)

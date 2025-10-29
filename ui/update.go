@@ -191,7 +191,7 @@ func (m model) updateFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
         		table.WithColumns(columns),
         		table.WithRows(rows),
         		table.WithFocused(true),
-        		table.WithHeight(15),
+        		table.WithHeight(taskViewHeight),
         	)
 
         	t.SetStyles(table.Styles{
