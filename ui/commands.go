@@ -9,6 +9,7 @@ import (
     "path/filepath"
     "strings"
     "time"
+    "fmt"
 
 	"bubble-jira/jira"
 
@@ -29,6 +30,12 @@ func fetchCommentsCmd(jc *jira.Client, issueKey string) tea.Cmd {
 		comments, err := jc.FetchComments(context.Background(), issueKey)
 		return commentsFetchedMsg{comments: comments, err: err}
 	}
+}
+
+// fetchStatusCmd
+func fetchStatusCmd(jc *jira.Client, issueKey string, selectedID int) tea.Cmd {
+    jc.PostStatus(context.Background(), issueKey, selectedID)
+    return nil
 }
 
 // tickFetchCmd creates a command for progress updates

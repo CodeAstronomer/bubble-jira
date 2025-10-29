@@ -57,7 +57,7 @@ func (m model) taskContextView() string {
 // fetchingView renders the fetching view
 func (m model) fetchingView() string {
 	if m.fetching.error != "" {
-		return lipgloss.NewStyle().Padding(1, 2).Render(
+		return lipgloss.NewStyle().Padding(topBottomPadding, leftRightPadding).Render(
 			"Error: " + m.fetching.error,
 		)
 	}
@@ -122,13 +122,6 @@ func (m model) commitInputViewGit() string {
 
     m.commitInput.input.Prompt = ""
     content.WriteString(m.commitInput.input.View())
-    content.WriteString("\n\n")
-
-    if m.commitInput.focusSave {
-        content.WriteString(focusedButtonGit)
-    } else {
-        content.WriteString(blurredButtonGit)
-    }
 
     content.WriteString("\n\n")
     content.WriteString(
@@ -139,4 +132,34 @@ func (m model) commitInputViewGit() string {
     )
 
     return content.String()
+}
+
+// commitInputViewStatus
+func (m model) commitInputViewStatus() string {
+    var statuses = []string{"done", "wa", "staging"}
+	var content strings.Builder
+	content.Grow(256)
+
+	content.WriteString("🪶 Choose Task Status\n\n")
+	content.WriteString("\n\nSelect Status:\n")
+
+	for i, status := range statuses {
+		if m.jiraStatusInput.cursor == i {
+			content.WriteString("(•) ")
+		} else {
+			content.WriteString("( ) ")
+		}
+		content.WriteString(status)
+		content.WriteString("\n")
+	}
+
+	content.WriteString("\n\n")
+    content.WriteString(
+        lipgloss.NewStyle().Faint(true).Render(
+            keyMap[keyUp] + "/" + keyMap[keyDown] + ": navigate • " +
+                keyMap[keyEnter] + ": confirm • " + keyExitKeysStr + ": cancel",
+        ),
+    )
+
+	return content.String()
 }

@@ -203,6 +203,36 @@ func (c *Client) FetchComments(ctx context.Context, issueKey string) ([]Comment,
 	return comments, nil
 }
 
+// PostStatus
+func (c *Client) PostStatus(ctx context.Context, issueKey string, selectedID int) {
+	/* if err := c.validateConfig(); err != nil {
+		return nil, err
+	}
+
+	q := url.Values{}
+	q.Set("fields", "comment")
+
+	req, err := c.buildRequest(ctx, "GET", "/rest/api/3/issue/"+issueKey, q)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.executeRequest(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	// Parse the response to extract comments
+	var issueResponse map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&issueResponse); err != nil {
+		return nil, err
+	}
+
+	comments := extractCommentsFromResponse(issueResponse)
+	return comments, nil */
+}
+
 // extractCommentsFromResponse parses the API response to extract comments
 func extractCommentsFromResponse(issueResponse map[string]interface{}) []Comment {
 	fields, ok := issueResponse["fields"].(map[string]interface{})

@@ -54,6 +54,13 @@ type model struct {
         key       string
         title     string
     }
+    jiraStatusInput struct {
+    	key      string
+        input    textinput.Model
+        focusSave bool
+        cursor   int
+        choice   string
+    }
 }
 
 // fetchingModel represents the fetching state UI
@@ -184,6 +191,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateConfigEdit(msg)
 	case "commit-input":
         return m.updateCommitInputGit(msg)
+	case "commit-input-status":
+        return m.updateCommitInputStatus(msg)
 	default:
 		return m, nil
 	}
@@ -217,7 +226,9 @@ func (m model) View() string {
 	case "fetching":
 		return fetchingStyle.Render(m.fetchingView())
 	case "commit-input":
-        return m.commitInputViewGit()
+        return fetchingStyle.Render(m.commitInputViewGit())
+    case "commit-input-status":
+        return fetchingStyle.Render(m.commitInputViewStatus())
 	default:
 		return "Unknown state"
 	}

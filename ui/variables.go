@@ -44,6 +44,13 @@ var (
     //Git
     keyLeft = true
 
+    //Jira
+    jiraStatusMap = map[string]int{
+        "done": 31,
+        "wa": 81,
+        "staging": 91,
+    }
+
     //Help Footer
     cfg = config.DefaultConfig()
     exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter = cfg.GetKeys()

@@ -367,6 +367,17 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
             m.commitInput.input.Placeholder = ""
             m.commitInput.input.Focus()
 
+            // Initialize jiraStatusInput with only the key
+            m.jiraStatusInput = struct {
+                key      string
+                input    textinput.Model
+                focusSave bool
+                cursor   int
+                choice   string
+            }{
+                key: key,
+            }
+
             m.state = "commit-input"
             return m, nil
         }
@@ -657,18 +668,15 @@ func (m model) updateCommitInputGit(msg tea.Msg) (tea.Model, tea.Cmd) {
                 if err := runGitCommitAndPush(fullMsg); err != nil {
                     m.statusMessage = fmt.Sprintf("Git error: %v", err)
                     log.Println("Git push failed:", err)
-                    fmt.Printf("\nThis window will close in %d seconds.\n", 2)
-                } else {
-                    m.statusMessage = fmt.Sprintf("✅ Commit and push successful: %q", fullMsg)
-                    log.Println("Committed and pushed:", fullMsg)
-                    fmt.Printf("\nThis window will close in %d seconds.\n", 2)
+                    fmt.Printf("\nThis window will close in %d seconds.\n", closeAfterSec)
+                    return m, tea.Tick(time.Duration(closeAfterSec)*time.Second, func(time.Time) tea.Msg {
+                        return quitAfterDelayMsg{}
+                    })
                 }
-
-                // Start 2-second timer before quitting
-                return m, tea.Tick(time.Duration(closeAfterSec)*time.Second, func(time.Time) tea.Msg {
-                    return quitAfterDelayMsg{}
-                })
+                log.Println("Committed and pushed:", fullMsg)
             }
+            m.state = "commit-input-status"
+            return m, nil
 
         case contains(exitKeys, msg.String()):
             m.state = "tasks"
@@ -686,4 +694,54 @@ func (m model) updateCommitInputGit(msg tea.Msg) (tea.Model, tea.Cmd) {
     }
 
     return m, nil
+}
+
+// updateCommitInputStatus
+func (m model) updateCommitInputStatus(msg tea.Msg) (tea.Model, tea.Cmd) {
+	statuses := []string{"done", "wa", "staging"}
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case keyDown:
+			if !m.jiraStatusInput.focusSave {
+				m.jiraStatusInput.cursor++
+				if m.jiraStatusInput.cursor >= len(statuses) {
+					m.jiraStatusInput.cursor = 0
+				}
+			} else {
+				m.jiraStatusInput.focusSave = false
+			}
+			return m, nil
+
+		case keyUp:
+			if !m.jiraStatusInput.focusSave {
+				m.jiraStatusInput.cursor--
+				if m.jiraStatusInput.cursor < 0 {
+					m.jiraStatusInput.cursor = len(statuses) - 1
+				}
+			} else {
+				m.jiraStatusInput.focusSave = false
+			}
+			return m, nil
+
+		case keyEnter:
+			selectedStatus := statuses[m.jiraStatusInput.cursor]
+			m.jiraStatusInput.choice = selectedStatus
+			m.state = "comments-fetching"
+            var selectedID = jiraStatusMap[selectedStatus]
+			return m, fetchStatusCmd(m.jc, m.jiraStatusInput.key, selectedID)
+
+		default:
+			if contains(exitKeys, msg.String()) {
+				m.state = "tasks"
+				return m, nil
+			}
+		}
+
+	case quitAfterDelayMsg:
+		return m, tea.Quit
+	}
+
+	return m, nil
 }
