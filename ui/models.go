@@ -15,6 +15,7 @@ import (
 )
 
 type startTasksMsg struct{}
+type quitAfterDelayMsg struct{}
 
 // model represents the main application model
 type model struct {
@@ -41,10 +42,17 @@ type model struct {
 	screenWidth      int
 	screenHeight     int
 	editingMode      string
-	hoverTimer      *time.Timer
-    hoveredTaskKey  string
-    cachedComments  map[string][]jira.Comment
+	hoverTimer       *time.Timer
+    hoveredTaskKey   string
+    cachedComments   map[string][]jira.Comment
     fetchingComments bool
+    statusMessage    string
+    commitInput struct {
+    	input     textinput.Model
+        focusSave bool
+        key       string
+        title     string
+    }
 }
 
 // fetchingModel represents the fetching state UI
@@ -173,6 +181,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateConfigList(msg)
 	case "config-edit":
 		return m.updateConfigEdit(msg)
+	case "commit-input":
+        return m.updateCommitInputGit(msg)
 	default:
 		return m, nil
 	}
@@ -205,6 +215,8 @@ func (m model) View() string {
 		return configStyle.Render(m.configInputView())
 	case "fetching":
 		return fetchingStyle.Render(m.fetchingView())
+	case "commit-input":
+        return m.commitInputViewGit()
 	default:
 		return "Unknown state"
 	}

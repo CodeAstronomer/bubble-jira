@@ -42,6 +42,9 @@ var (
 var (
 	focusedButton = focusedStyle.Render("[ Save ]")
 	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Save"))
+
+	focusedButtonGit = focusedStyle.Render("[ Commit ]")
+	blurredButtonGit = fmt.Sprintf("[ %s ]", blurredStyle.Render("Commit"))
 )
 
 // Symbols

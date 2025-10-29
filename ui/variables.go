@@ -35,10 +35,14 @@ var (
     leftRightPadding   = 2
     terminalWidth      = (width-(leftRightPadding*leftRightPadding))
     terminalHeight     = (height-(topBottomPadding*topBottomPadding))
+    closeAfterSec      = 2
 
     //Tasks
     taskViewHeight = 30
     autoFetchTimeSec = 3
+
+    //Git
+    keyLeft = true
 
     //Help Footer
     cfg = config.DefaultConfig()

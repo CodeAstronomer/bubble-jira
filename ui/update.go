@@ -2,12 +2,17 @@ package ui
 
 import (
 	"bubble-jira/jira"
+    "fmt"
+    "os"
+    "log"
+    "strings"
     "time"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
+	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/glamour"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -318,31 +323,48 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
 
         case msg.String() == keyEnter:
             row := m.tasksTable.SelectedRow()
-            if len(row) > 0 {
-                // Timer stoppen
-                if m.hoverTimer != nil {
-                    m.hoverTimer.Stop()
-                    m.hoverTimer = nil
-                }
-
-                contextItems := []list.Item{
-                    contextMenuItem{title: ContextViewComments},
-                }
-                m.taskContextMenu = list.New(contextItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
-                m.taskContextMenu.Title = "Actions"
-                m.taskContextMenu.SetShowHelp(true)
-                m.taskContextMenu.SetShowPagination(false)
-
-                key := row[0]
-                m.selectedIssue = &jira.Issue{
-                    Key:    key,
-                    Title:  row[1],
-                    Status: row[2],
-                }
-
-                m.state = "task-context"
+            if len(row) == 0 {
                 return m, nil
             }
+
+            if m.hoverTimer != nil {
+                m.hoverTimer.Stop()
+                m.hoverTimer = nil
+            }
+
+            if _, err := os.Stat(".git"); os.IsNotExist(err) {
+                m.statusMessage = "No Git repository found. Please initialize or clone a repo first."
+                return m, nil
+            }
+
+            if !checkGitChanges() {
+                m.statusMessage = "No changes to commit."
+                return m, nil
+            }
+
+            key := row[0]
+            title := row[1]
+
+            // Log vor Commit-Input
+            log.Println("Preparing git commit for issue:", key, "with default title:", title)
+
+            // Commit-Input initialisieren (Input wird in der View gehandhabt)
+            m.commitInput = struct {
+                input     textinput.Model
+                focusSave bool
+                key       string
+                title     string
+            }{
+                input: textinput.New(),
+                focusSave: false,
+                key:       key,
+                title:     title,
+            }
+            m.commitInput.input.Placeholder = ""
+            m.commitInput.input.Focus()
+
+            m.state = "commit-input"
+            return m, nil
         }
     }
 
@@ -585,4 +607,74 @@ func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	return m, nil
+}
+
+// updateCommitInputGit handles git commit message editing UI
+func (m model) updateCommitInputGit(msg tea.Msg) (tea.Model, tea.Cmd) {
+    switch msg := msg.(type) {
+    case tea.KeyMsg:
+        switch {
+        case msg.String() == keyDown:
+            m.commitInput.focusSave = !m.commitInput.focusSave
+            if m.commitInput.focusSave {
+                m.commitInput.input.Blur()
+                m.commitInput.input.PromptStyle = noStyle
+                m.commitInput.input.TextStyle = noStyle
+            } else {
+                m.commitInput.input.Focus()
+                m.commitInput.input.PromptStyle = focusedStyle
+                m.commitInput.input.TextStyle = focusedStyle
+            }
+            return m, nil
+
+        case msg.String() == keyUp:
+            if m.commitInput.focusSave {
+                m.commitInput.focusSave = false
+                m.commitInput.input.Focus()
+                m.commitInput.input.PromptStyle = focusedStyle
+                m.commitInput.input.TextStyle = focusedStyle
+            }
+            return m, nil
+
+        case msg.String() == keyEnter:
+            if m.commitInput.focusSave {
+                commitMsg := strings.TrimSpace(m.commitInput.input.Value())
+                if commitMsg == "" {
+                    commitMsg = m.commitInput.title
+                }
+
+                fullMsg := fmt.Sprintf("%s %s", m.commitInput.key, commitMsg)
+
+                if err := runGitCommitAndPush(fullMsg); err != nil {
+                    m.statusMessage = fmt.Sprintf("Git error: %v", err)
+                    log.Println("Git push failed:", err)
+                    fmt.Printf("\nThis window will close in %d seconds.\n", 2)
+                } else {
+                    m.statusMessage = fmt.Sprintf("✅ Commit and push successful: %q", fullMsg)
+                    log.Println("Committed and pushed:", fullMsg)
+                    fmt.Printf("\nThis window will close in %d seconds.\n", 2)
+                }
+
+                // Start 2-second timer before quitting
+                return m, tea.Tick(time.Duration(closeAfterSec)*time.Second, func(time.Time) tea.Msg {
+                    return quitAfterDelayMsg{}
+                })
+            }
+
+        case contains(exitKeys, msg.String()):
+            m.state = "tasks"
+            return m, nil
+        }
+
+        if !m.commitInput.focusSave {
+            var cmd tea.Cmd
+            m.commitInput.input, cmd = m.commitInput.input.Update(msg)
+            return m, cmd
+        }
+
+    case quitAfterDelayMsg:
+        return m, tea.Quit
+    }
+
+    return m, nil
 }

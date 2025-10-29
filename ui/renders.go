@@ -108,3 +108,35 @@ func (m model) configInputView() string {
 
 	return content.String()
 }
+
+// commitInputViewGit renders the git commit input screen
+func (m model) commitInputViewGit() string {
+    var content strings.Builder
+    content.Grow(256)
+
+    content.WriteString("🪶 Git Commit\n\n")
+    content.WriteString("Issue: ")
+    content.WriteString(m.commitInput.key)
+    content.WriteString("\nLeave empty to use the task title as the commit message.")
+    content.WriteString("\n\nMessage:\n")
+
+    m.commitInput.input.Prompt = ""
+    content.WriteString(m.commitInput.input.View())
+    content.WriteString("\n\n")
+
+    if m.commitInput.focusSave {
+        content.WriteString(focusedButtonGit)
+    } else {
+        content.WriteString(blurredButtonGit)
+    }
+
+    content.WriteString("\n\n")
+    content.WriteString(
+        lipgloss.NewStyle().Faint(true).Render(
+            keyMap[keyUp] + "/" + keyMap[keyDown] + ": navigate • " +
+                keyMap[keyEnter] + ": confirm • " + keyExitKeysStr + ": cancel",
+        ),
+    )
+
+    return content.String()
+}

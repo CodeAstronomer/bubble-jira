@@ -1,12 +1,14 @@
 package ui
 
 import (
-	"context"
-	"io"
-	"net/http"
-	"os"
-	"path/filepath"
-	"time"
+    "context"
+    "io"
+    "net/http"
+    "os"
+    "os/exec"
+    "path/filepath"
+    "strings"
+    "time"
 
 	"bubble-jira/jira"
 
@@ -93,4 +95,31 @@ func fetchCommentsBackgroundCmd(jc *jira.Client, taskKey string) tea.Cmd {
             err:      err,
         }
     }
+}
+
+func checkGitChanges() bool {
+    cmd := exec.Command("git", "status", "--porcelain")
+    out, err := cmd.Output()
+    if err != nil {
+        return false
+    }
+    return len(strings.TrimSpace(string(out))) > 0
+}
+
+func runGitCommitAndPush(message string) error {
+    /* commit := exec.Command("git", "commit", "-am", message)
+    commit.Stdout = os.Stdout
+    commit.Stderr = os.Stderr
+    if err := commit.Run(); err != nil {
+        return fmt.Errorf("commit failed: %w", err)
+    }
+
+    push := exec.Command("git", "push")
+    push.Stdout = os.Stdout
+    push.Stderr = os.Stderr
+    if err := push.Run(); err != nil {
+        return fmt.Errorf("push failed: %w", err)
+    } */
+
+    return nil
 }
