@@ -21,6 +21,7 @@ const (
 	MenuQuitTitle       = "Quit"
 	MenuConfigTitle     = "Edit Config"
 	MenuLicenceTitle    = "View Licence"
+
 	MenuBackTitle       = "Back"
 	ContextViewComments = "View Comments"
 )
@@ -31,7 +32,7 @@ var (
     topBottomPadding   = 1
     leftRightPadding   = 2
     terminalWidth      = (width-(leftRightPadding*leftRightPadding))
-    terminalHeight      = (height-(topBottomPadding*topBottomPadding))
+    terminalHeight     = (height-(topBottomPadding*topBottomPadding))
 	menuStyle          = lipgloss.NewStyle().Padding(topBottomPadding, leftRightPadding)
 	tasksStyle         = lipgloss.NewStyle().Padding(topBottomPadding, leftRightPadding)
 	fetchingStyle      = lipgloss.NewStyle().Padding(topBottomPadding, leftRightPadding)

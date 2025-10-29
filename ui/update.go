@@ -11,6 +11,15 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+func contains(slice []string, val string) bool {
+    for _, s := range slice {
+        if s == val {
+            return true
+        }
+    }
+    return false
+}
+
 // updateMenu handles menu state updates
 func (m model) updateMenu(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
@@ -18,11 +27,11 @@ func (m model) updateMenu(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "enter" {
+		if msg.String() == keyEnter {
 			selected := m.menu.SelectedItem()
 			menuItemSelected := selected.(menuItem)
 
-			if !menuItemSelected.enabled && menuItemSelected.title == MenuViewTasksTitle {
+			if !menuItemSelected.enabled && menuItemSelected.title == jira.MenuViewTasksTitle {
 				m.configValidError = "⚠ Config incomplete! Please fill all fields in Settings > Edit Config first."
 				return m, nil
 			}
@@ -38,17 +47,18 @@ func (m model) updateMenu(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.fetching.spinner.Tick,
 				)
 			case MenuSettingsTitle:
-				m.state = "settings"
-				m.configValidError = ""
-				settingsItems := []list.Item{
-					menuItem{title: MenuConfigTitle, enabled: true},
-					menuItem{title: MenuLicenceTitle, enabled: true},
-					menuItem{title: MenuBackTitle, enabled: true},
-				}
-				m.settings = list.New(settingsItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
-				m.settings.Title = "Settings"
-				m.settings.SetShowHelp(true)
-				m.settings.SetShowPagination(false)
+                m.state = "settings"
+                m.configValidError = ""
+                settingsItems := []list.Item{
+                    menuItem{title: jira.MenuConfigTitle, enabled: true},
+                    menuItem{title: jira.MenuLicenceTitle, enabled: true},
+                    menuItem{title: jira.MenuKeybindingTitle, enabled: true},
+                    menuItem{title: jira.MenuBackTitle, enabled: true},
+                }
+                m.settings = list.New(settingsItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
+                m.settings.Title = "Settings"
+                m.settings.SetShowHelp(true)
+                m.settings.SetShowPagination(false)
 			case MenuQuitTitle:
 				return m, tea.Quit
 			}
@@ -64,24 +74,30 @@ func (m model) updateSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "enter" {
+		if msg.String() == keyEnter {
 			selected := m.settings.SelectedItem()
 			menuItemSelected := selected.(menuItem)
 
 			switch menuItemSelected.title {
-			case MenuConfigTitle:
+			case jira.MenuConfigTitle:
 				m.configList = newConfigListEditor(m.cfg)
+				m.editingMode = "config"
 				m.state = "config"
 				return m, nil
-			case MenuLicenceTitle:
+			case jira.MenuLicenceTitle:
 				m.licenceLoading = true
 				m.state = "licence"
 				return m, loadLicenceCmd()
-			case MenuBackTitle:
+			case jira.MenuKeybindingTitle:
+                m.configList = newKeybindingEditor(m.cfg)
+				m.editingMode = "keybindings"
+                m.state = "config"
+                return m, nil
+			case jira.MenuBackTitle:
 				m.state = "menu"
 				return m, nil
 			}
-		} else if msg.String() == "q" || msg.String() == "esc" {
+		} else if contains(exitKeys, msg.String()) {
 			m.state = "menu"
 			return m, nil
 		}
@@ -99,17 +115,17 @@ func (m model) updateLicence(msg tea.Msg) (tea.Model, tea.Cmd) {
         return m, nil
 
     case tea.KeyMsg:
-        switch msg.String() {
-        case "q", "esc", "enter":
+        switch {
+        case contains(exitKeys, msg.String()):
             m.state = "settings"
             m.licenceContent = ""
-        case "up":
+        case msg.String() == keyUp:
             m.licenceOffset--
-        case "down":
+        case msg.String() == keyDown:
             m.licenceOffset++
-        case "pgup":
+        case msg.String() == keyFastUp:
             m.licenceOffset -= terminalHeight / 2
-        case "pgdown":
+        case msg.String() == keyFastDown:
             m.licenceOffset += terminalHeight / 2
         }
     }
@@ -201,7 +217,7 @@ func (m model) updateFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case tea.KeyMsg:
-		if msg.String() == "q" || msg.String() == "esc" {
+		if contains(exitKeys, msg.String()) {
 			m.state = "menu"
 		}
 	}
@@ -215,10 +231,10 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q":
+		switch {
+		case contains(exitKeys, msg.String()):
 			m.state = "menu"
-		case "enter":
+		case msg.String() == keyEnter:
 			row := m.tasksTable.SelectedRow()
 			if len(row) > 0 {
 				contextItems := []list.Item{
@@ -251,8 +267,8 @@ func (m model) updateTaskContext(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter":
+		switch {
+		case msg.String() == keyEnter:
 			selected := m.taskContextMenu.SelectedItem()
 			menuItem := selected.(contextMenuItem)
 
@@ -270,7 +286,7 @@ func (m model) updateTaskContext(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.selectedIssue = nil
 			return m, nil
 
-		case "q", "esc":
+		case contains(exitKeys, msg.String()):
 			m.state = "tasks"
 			m.selectedIssue = nil
 			return m, nil
@@ -338,7 +354,7 @@ func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case tea.KeyMsg:
-		if msg.String() == "q" || msg.String() == "esc" {
+		if contains(exitKeys, msg.String()) {
 			m.state = "tasks"
 		}
 	}
@@ -358,8 +374,8 @@ func (m model) updateCommentsView(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.commentsViewport.Height = msg.Height - 2
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "esc":
+		switch {
+		case contains(exitKeys, msg.String()):
 			m.state = "tasks"
 			m.selectedIssue = nil
 			return m, nil
@@ -375,26 +391,27 @@ func (m model) updateConfigList(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter":
+		switch {
+		case msg.String() == keyEnter:
 			m.editingFieldIdx = m.configList.list.Index()
 			field := m.configList.fields[m.editingFieldIdx]
 			m.configInput = newConfigInputEditor(field.key, field.value)
 			m.state = "config-edit"
 			return m, nil
 
-		case "q", "esc":
-			m.state = "settings"
-			settingsItems := []list.Item{
-				menuItem{title: MenuConfigTitle, enabled: true},
-				menuItem{title: MenuLicenceTitle, enabled: true},
-				menuItem{title: MenuBackTitle, enabled: true},
-			}
-			m.settings = list.New(settingsItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
-			m.settings.Title = "Settings"
-			m.settings.SetShowHelp(true)
-			m.settings.SetShowPagination(false)
-			return m, nil
+		case contains(exitKeys, msg.String()):
+            m.state = "settings"
+            settingsItems := []list.Item{
+                menuItem{title: jira.MenuConfigTitle, enabled: true},
+                menuItem{title: jira.MenuLicenceTitle, enabled: true},
+                menuItem{title: jira.MenuKeybindingTitle, enabled: true},
+                menuItem{title: jira.MenuBackTitle, enabled: true},
+            }
+            m.settings = list.New(settingsItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
+            m.settings.Title = "Settings"
+            m.settings.SetShowHelp(true)
+            m.settings.SetShowPagination(false)
+            return m, nil
 		}
 	}
 	return m, cmd
@@ -404,8 +421,8 @@ func (m model) updateConfigList(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "tab", "down":
+		switch {
+		case msg.String() == keyDown:
 			m.configInput.focusSave = !m.configInput.focusSave
 			if m.configInput.focusSave {
 				m.configInput.input.Blur()
@@ -418,7 +435,7 @@ func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
-		case "up":
+		case msg.String() == keyUp:
 			if m.configInput.focusSave {
 				m.configInput.focusSave = false
 				m.configInput.input.Focus()
@@ -427,17 +444,29 @@ func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
-		case "enter":
+
+		case msg.String() == keyEnter:
 			if m.configInput.focusSave {
 				m.configList.fields[m.editingFieldIdx].value = m.configInput.input.Value()
 				m.updateConfigFields()
-				m.configList = newConfigListEditor(m.cfg)
+
+				// Recreate the appropriate editor based on mode
+				if m.editingMode == "keybindings" {
+					m.configList = newKeybindingEditor(m.cfg)
+				} else {
+					m.configList = newConfigListEditor(m.cfg)
+				}
 				m.state = "config"
 				return m, nil
 			}
 
-		case "esc":
-			m.configList = newConfigListEditor(m.cfg)
+		case contains(exitKeys, msg.String()):
+			// Recreate the appropriate editor based on mode
+			if m.editingMode == "keybindings" {
+				m.configList = newKeybindingEditor(m.cfg)
+			} else {
+				m.configList = newConfigListEditor(m.cfg)
+			}
 			m.state = "config"
 			return m, nil
 		}

@@ -2,8 +2,7 @@
 package ui
 
 import (
-	"strings"
-
+    "strings"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -31,7 +30,7 @@ func (m model) licenceView() string {
     visible := lines[m.licenceOffset:end]
 
     content := strings.Join(visible, "\n")
-    footer := lipgloss.NewStyle().Faint(true).Render("↑/↓: scroll • q/esc: back")
+    footer := lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": scroll • "+ keyMap[keyFastUp]+"/"+ keyMap[keyFastDown] +": fast-scroll • "+ keyExitKeysStr +": back")
 
     // Render with terminal width and height, but no forced wrapping
     return lipgloss.NewStyle().
@@ -46,7 +45,7 @@ func (m model) tasksTableView() string {
 	content.Grow(512)
 	content.WriteString(tableBaseStyle.Render(m.tasksTable.View()))
 	content.WriteString("\n")
-	content.WriteString(lipgloss.NewStyle().Faint(true).Render("↑/↓: navigate • enter: select • q: back"))
+	content.WriteString(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": navigate • "+ keyMap[keyEnter] +": select • "+ keyExitKeysStr +": back"))
 	return content.String()
 }
 
@@ -78,7 +77,7 @@ func (m model) commentsView() string {
 	content.Grow(m.screenWidth * 10)
 	content.WriteString(m.commentsViewport.View())
 	content.WriteString("\n")
-	content.WriteString(lipgloss.NewStyle().Faint(true).Render("↑/↓: scroll • q/esc: back"))
+	content.WriteString(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": scroll • "+ keyExitKeysStr +": back"))
 	return content.String()
 }
 
@@ -104,7 +103,7 @@ func (m model) configInputView() string {
         content.WriteString(blurredButton)
     }
     content.WriteString("\n\n")
-    content.WriteString(lipgloss.NewStyle().Faint(true).Render("tab/↑/↓: toggle focus • enter: confirm • esc: cancel"))
+    content.WriteString(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": navigate • "+ keyMap[keyEnter] +": confirm • "+ keyExitKeysStr +": cancel"))
 
 
 	return content.String()

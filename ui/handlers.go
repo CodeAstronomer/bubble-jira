@@ -2,6 +2,7 @@ package ui
 
 import (
 	"bubble-jira/config"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/progress"
@@ -9,7 +10,6 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/lipgloss"
 )
-
 // newFetchingModel creates a new fetching model
 func newFetchingModel() fetchingModel {
 	s := spinner.New()
@@ -62,6 +62,38 @@ func newConfigListEditor(cfg *config.Config) configListEditor {
 	}
 }
 
+// newKeybindingEditor creates a new config list editor
+func newKeybindingEditor(cfg *config.Config) configListEditor {
+	exitKeysStr := ""
+	if len(cfg.Keys.Exit) > 0 {
+		exitKeysStr = strings.Join(cfg.Keys.Exit, "/")
+	}
+
+	fields := []configField{
+		{key: "KeyUp", value: cfg.Keys.Up},
+		{key: "KeyDown", value: cfg.Keys.Down},
+		{key: "KeyFastUp", value: cfg.Keys.FastUp},
+		{key: "KeyFastDown", value: cfg.Keys.FastDown},
+		{key: "Enter", value: cfg.Keys.Confirm},
+		{key: "Back/Cancel", value: exitKeysStr},
+	}
+
+	items := make([]list.Item, len(fields))
+	for i := range fields {
+		items[i] = fields[i]
+	}
+
+	l := list.New(items, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
+	l.Title = "Configuration"
+	l.SetShowHelp(true)
+	l.SetShowPagination(false)
+
+	return configListEditor{
+		fields: fields,
+		list:   l,
+	}
+}
+
 // newConfigInputEditor creates a new config input editor
 func newConfigInputEditor(key, value string) configInputEditor {
 	t := textinput.New()
@@ -93,6 +125,20 @@ func (m *model) updateConfigFields() {
 			m.cfg.APIToken = field.value
 		case "JQL Query":
 			m.cfg.JQL = field.value
+
+		// Keybinding fields
+		case "KeyUp":
+			m.cfg.Keys.Up = field.value
+		case "KeyDown":
+			m.cfg.Keys.Down = field.value
+		case "KeyFastUp":
+			m.cfg.Keys.FastUp = field.value
+		case "KeyFastDown":
+			m.cfg.Keys.FastDown = field.value
+		case "Enter":
+			m.cfg.Keys.Confirm = field.value
+		case "Back/Cancel":
+			m.cfg.Keys.Exit = strings.Split(field.value, "/")
 		}
 	}
 	if err := config.Save(m.cfg); err != nil {

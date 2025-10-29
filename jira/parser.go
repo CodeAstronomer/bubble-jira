@@ -7,6 +7,7 @@ const (
 	MenuQuitTitle         = "Quit"
 	MenuConfigTitle       = "Edit Config"
 	MenuLicenceTitle      = "LICENSE"
+	MenuKeybindingTitle   = "Keybinding"
 	MenuBackTitle         = "Back to Main Menu"
 	ContextViewComments   = "View Comments"
 )

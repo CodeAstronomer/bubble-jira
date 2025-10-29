@@ -4,7 +4,17 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 )
+
+type Keys struct {
+	Exit []string `json:"exit"`
+	Up   string `json:"up"`
+	Down string `json:"down"`
+    FastUp   string   `json:"fast_up"`
+    FastDown string   `json:"fast_down"`
+    Confirm  string   `json:"confirm"`
+}
 
 // Config holds Jira connection settings.
 type Config struct {
@@ -12,6 +22,7 @@ type Config struct {
 	Email    string `json:"email"`
 	APIToken string `json:"api_token"`
 	JQL      string `json:"jql"`
+	Keys     Keys   `json:"keys"`
 }
 
 // DefaultConfig returns a sensible default.
@@ -21,6 +32,14 @@ func DefaultConfig() *Config {
 		Email:    "you@example.com",
 		APIToken: "your-atlassian-api-token",
 		JQL:      "assignee = currentuser() AND (status != Done AND status != Erledigt) ORDER BY updated DESC",
+		Keys: Keys{
+            Exit: []string{"q", "esc"},
+            Up:   "up",
+            Down: "down",
+            FastUp:   "pgup",
+            FastDown: "pgdown",
+            Confirm: "enter",
+        },
 	}
 }
 
@@ -92,4 +111,17 @@ func (c *Config) IsValid() bool {
 	}
 
 	return true
+}
+
+func (c *Config) GetKeys() (exitKeys []string, exitKeysStr string, up string, down string, fastUp string, fastDown string, enter string) {
+    exitKeys = c.Keys.Exit
+    exitKeysStr = strings.Join(exitKeys, "/")
+
+    up = c.Keys.Up
+    down = c.Keys.Down
+    fastUp = c.Keys.FastUp
+    fastDown = c.Keys.FastDown
+    enter = c.Keys.Confirm
+
+    return
 }

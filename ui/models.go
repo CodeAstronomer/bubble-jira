@@ -37,6 +37,7 @@ type model struct {
 	commentsLoading  bool
 	screenWidth      int
 	screenHeight     int
+	editingMode      string
 }
 
 // fetchingModel represents the fetching state UI

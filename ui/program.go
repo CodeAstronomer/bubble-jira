@@ -7,6 +7,19 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+var (
+	cfg = config.DefaultConfig()
+	exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter = cfg.GetKeys()
+
+	keyMap = map[string]string{
+        keyUp:            "↑",
+        keyDown:          "↓",
+        keyFastDown:      "pgDown",
+        keyFastUp:        "pgUp",
+        keyEnter:         "⏎",
+    }
+)
+
 // Program wraps the bubbletea program
 type Program struct {
 	p *tea.Program
