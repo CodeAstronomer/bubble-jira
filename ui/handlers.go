@@ -30,6 +30,7 @@ func newFetchingModel() fetchingModel {
 			"Authenticating...",
 			"Fetching comments...",
 			"Processing results...",
+			"Done",
 		},
 		currentStage: 0,
 		status:       "Connecting to Jira...",

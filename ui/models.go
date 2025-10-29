@@ -69,6 +69,7 @@ type fetchingModel struct {
 	progress     progress.Model
 	stages       []string
 	currentStage int
+	fromStatus   bool
 	status       string
 	error        string
 	done         bool

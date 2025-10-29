@@ -203,34 +203,50 @@ func (c *Client) FetchComments(ctx context.Context, issueKey string) ([]Comment,
 	return comments, nil
 }
 
-// PostStatus
-func (c *Client) PostStatus(ctx context.Context, issueKey string, selectedID int) {
-	/* if err := c.validateConfig(); err != nil {
-		return nil, err
+// PostStatus changes the status of a Jira issue using the transition ID.
+// Returns the HTTP status code and an error if something goes wrong.
+func (c *Client) PostStatus(ctx context.Context, issueKey string, selectedID int) (int, error) {
+	if err := c.validateConfig(); err != nil {
+		return 0, err
 	}
 
-	q := url.Values{}
-	q.Set("fields", "comment")
+	urlPath := fmt.Sprintf("/rest/api/3/issue/%s/transitions", issueKey)
 
-	req, err := c.buildRequest(ctx, "GET", "/rest/api/3/issue/"+issueKey, q)
+	// Prepare JSON body
+	bodyMap := map[string]map[string]string{
+		"transition": {
+			"id": fmt.Sprintf("%d", selectedID),
+		},
+	}
+	bodyBytes, err := json.Marshal(bodyMap)
 	if err != nil {
-		return nil, err
+		return 0, fmt.Errorf("failed to marshal JSON body: %w", err)
 	}
 
-	resp, err := c.executeRequest(req)
+	req, err := c.buildRequest(ctx, "POST", urlPath, nil)
 	if err != nil {
-		return nil, err
+		return 0, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+
+	resp, err := c.hc.Do(req)
+	if err != nil {
+		return 0, err
 	}
 	defer resp.Body.Close()
 
-	// Parse the response to extract comments
-	var issueResponse map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&issueResponse); err != nil {
-		return nil, err
+	switch resp.StatusCode {
+	case 200:
+		return 200, nil
+	case 401:
+		return resp.StatusCode, fmt.Errorf("unauthorized: check your Jira email/API token")
+	case 404:
+		return resp.StatusCode, fmt.Errorf("issue %s not found", issueKey)
+	default:
+		return resp.StatusCode, fmt.Errorf("jira API returned status %s", resp.Status)
 	}
-
-	comments := extractCommentsFromResponse(issueResponse)
-	return comments, nil */
 }
 
 // extractCommentsFromResponse parses the API response to extract comments

@@ -15,6 +15,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+type statusCodeMsg struct {
+	Code int
+	Err  error
+}
+
 // fetchJiraTasksCmd creates a command to fetch Jira tasks
 func fetchJiraTasksCmd(jc *jira.Client) tea.Cmd {
 	return func() tea.Msg {
@@ -33,8 +38,10 @@ func fetchCommentsCmd(jc *jira.Client, issueKey string) tea.Cmd {
 
 // fetchStatusCmd
 func fetchStatusCmd(jc *jira.Client, issueKey string, selectedID int) tea.Cmd {
-    jc.PostStatus(context.Background(), issueKey, selectedID)
-    return nil
+	return func() tea.Msg {
+		statusCode, _ := jc.PostStatus(context.Background(), issueKey, selectedID)
+		return statusCodeMsg{Code: statusCode}
+	}
 }
 
 // tickFetchCmd creates a command for progress updates

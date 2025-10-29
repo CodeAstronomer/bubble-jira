@@ -442,15 +442,36 @@ func (m model) updateTaskContext(msg tea.Msg) (tea.Model, tea.Cmd) {
 // updateCommentsFetching handles comments fetching state updates
 func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+
 	case tickMsg:
+		// Increment progress stage if not finished
 		if m.fetching.currentStage < len(m.fetching.stages)-1 {
 			m.fetching.currentStage++
-			percent := float64(m.fetching.currentStage) / float64(len(m.fetching.stages))
-			progressCmd := m.fetching.progress.SetPercent(percent)
 			m.fetching.status = m.fetching.stages[m.fetching.currentStage]
+			percent := float64(m.fetching.currentStage+1) / float64(len(m.fetching.stages))
+			progressCmd := m.fetching.progress.SetPercent(percent)
 			return m, tea.Batch(tickFetchCmd(), progressCmd)
 		}
+
+		// Only quit automatically if this animation came from statusCodeMsg
+		if m.fetching.fromStatus {
+			fmt.Printf("\nThis window will close in %d seconds.\n", closeAfterSec)
+			m.fetching.fromStatus = false // reset flag
+			return m, tea.Tick(time.Duration(closeAfterSec)*time.Second, func(time.Time) tea.Msg {
+				return quitAfterDelayMsg{}
+			})
+		}
 		return m, nil
+
+	case statusCodeMsg:
+		if msg.Code >= 200 && msg.Code < 300 {
+			m.fetching.currentStage = 0
+			m.fetching.progress.SetPercent(0.0)
+			m.fetching.status = m.fetching.stages[0]
+			m.fetching.fromStatus = true
+
+			return m, tickFetchCmd()
+		}
 
 	case commentsFetchedMsg:
 		if msg.err != nil {
@@ -497,11 +518,15 @@ func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.fetching.progress = newProgress.(progress.Model)
 		return m, cmd
 
+	case quitAfterDelayMsg:
+		return m, tea.Quit
+
 	case tea.KeyMsg:
 		if contains(exitKeys, msg.String()) {
 			m.state = "tasks"
 		}
 	}
+
 	return m, nil
 }
 
