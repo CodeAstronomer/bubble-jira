@@ -647,10 +647,11 @@ func (m model) updateCommitInputGit(msg tea.Msg) (tea.Model, tea.Cmd) {
                     commitMsg = m.commitInput.title
                 }
 
-                if (keyLeft) {
-                    fullMsg := fmt.Sprintf("[" + m.commitInput.key + "]", commitMsg)
+                var fullMsg string
+                if keyLeft {
+                    fullMsg = fmt.Sprintf("[" + m.commitInput.key + "]", commitMsg)
                 } else {
-                    fullMsg := fmt.Sprintf(commitMsg, "[" + m.commitInput.key + "]")
+                    fullMsg = fmt.Sprintf(commitMsg, "[" + m.commitInput.key + "]")
                 }
 
                 if err := runGitCommitAndPush(fullMsg); err != nil {
