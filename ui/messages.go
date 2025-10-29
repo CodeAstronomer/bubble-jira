@@ -25,5 +25,17 @@ type licenceLoadedMsg struct {
 	err     error
 }
 
+// hoverTimeoutMsg wird gesendet, wenn der Hover-Timer abläuft
+type hoverTimeoutMsg struct {
+    taskKey string
+}
+
+// commentsCachedMsg wird gesendet, wenn Comments im Hintergrund gefetched wurden
+type commentsCachedMsg struct {
+    taskKey  string
+    comments []jira.Comment
+    err      error
+}
+
 // tickMsg message for progress updates
 type tickMsg time.Time

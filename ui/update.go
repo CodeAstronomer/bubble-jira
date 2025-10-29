@@ -2,6 +2,7 @@ package ui
 
 import (
 	"bubble-jira/jira"
+    "time"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/progress"
@@ -226,38 +227,144 @@ func (m model) updateFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // updateTasks handles tasks state updates
 func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-	m.tasksTable, cmd = m.tasksTable.Update(msg)
+    oldCursor := m.tasksTable.Cursor()
 
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch {
-		case contains(exitKeys, msg.String()):
-			m.state = "menu"
-		case msg.String() == keyEnter:
-			row := m.tasksTable.SelectedRow()
-			if len(row) > 0 {
-				contextItems := []list.Item{
-					contextMenuItem{title: ContextViewComments},
-				}
-				m.taskContextMenu = list.New(contextItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
-				m.taskContextMenu.Title = "Actions"
-				m.taskContextMenu.SetShowHelp(true)
-				m.taskContextMenu.SetShowPagination(false)
+    switch msg := msg.(type) {
+    case hoverTimeoutMsg:
+        if msg.taskKey == m.hoveredTaskKey && !m.fetchingComments {
+            if _, exists := m.cachedComments[msg.taskKey]; !exists {
+                m.fetchingComments = true
+                return m, fetchCommentsBackgroundCmd(m.jc, msg.taskKey)
+            }
+        }
+        return m, nil
 
-				key := row[0]
-				m.selectedIssue = &jira.Issue{
-					Key:    key,
-					Title:  row[1],
-					Status: row[2],
-				}
+    case commentsCachedMsg:
+        m.fetchingComments = false
+        if msg.err == nil {
+            m.cachedComments[msg.taskKey] = msg.comments
+        }
+        return m, nil
 
-				m.state = "task-context"
-				return m, nil
-			}
-		}
-	}
-	return m, cmd
+    case tea.KeyMsg:
+        switch {
+        case contains(exitKeys, msg.String()):
+            if m.hoverTimer != nil {
+                m.hoverTimer.Stop()
+                m.hoverTimer = nil
+            }
+            m.hoveredTaskKey = ""
+            m.state = "menu"
+            return m, nil
+
+        case msg.String() == " ":
+            row := m.tasksTable.SelectedRow()
+            if len(row) > 0 {
+                key := row[0]
+                m.selectedIssue = &jira.Issue{
+                    Key:    key,
+                    Title:  row[1],
+                    Status: row[2],
+                }
+
+                if m.hoverTimer != nil {
+                    m.hoverTimer.Stop()
+                    m.hoverTimer = nil
+                }
+
+                if cachedComments, exists := m.cachedComments[key]; exists {
+                    m.comments = cachedComments
+                    m.commentsLoading = false
+
+                    markdownContent := renderCommentsToMarkdown(m.comments)
+                    renderer, err := glamour.NewTermRenderer(
+                        glamour.WithAutoStyle(),
+                        glamour.WithWordWrap(m.screenWidth-4),
+                    )
+                    if err != nil {
+                        m.state = "tasks"
+                        return m, nil
+                    }
+
+                    renderedContent, err := renderer.Render(markdownContent)
+                    if err != nil {
+                        m.state = "tasks"
+                        return m, nil
+                    }
+
+                    m.commentsViewport.SetContent(renderedContent)
+                    m.state = "comments-view"
+                    return m, nil
+                } else if m.fetchingComments && m.hoveredTaskKey == key {
+                    m.commentsLoading = true
+                    m.fetching = newFetchingModel()
+                    m.state = "comments-fetching"
+                    return m, tea.Batch(
+                        tickFetchCmd(),
+                        m.fetching.spinner.Tick,
+                    )
+                } else {
+                    m.commentsLoading = true
+                    m.fetching = newFetchingModel()
+                    m.state = "comments-fetching"
+                    return m, tea.Batch(
+                        fetchCommentsCmd(m.jc, key),
+                        tickFetchCmd(),
+                        m.fetching.spinner.Tick,
+                    )
+                }
+            }
+            return m, nil
+
+        case msg.String() == keyEnter:
+            row := m.tasksTable.SelectedRow()
+            if len(row) > 0 {
+                // Timer stoppen
+                if m.hoverTimer != nil {
+                    m.hoverTimer.Stop()
+                    m.hoverTimer = nil
+                }
+
+                contextItems := []list.Item{
+                    contextMenuItem{title: ContextViewComments},
+                }
+                m.taskContextMenu = list.New(contextItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
+                m.taskContextMenu.Title = "Actions"
+                m.taskContextMenu.SetShowHelp(true)
+                m.taskContextMenu.SetShowPagination(false)
+
+                key := row[0]
+                m.selectedIssue = &jira.Issue{
+                    Key:    key,
+                    Title:  row[1],
+                    Status: row[2],
+                }
+
+                m.state = "task-context"
+                return m, nil
+            }
+        }
+    }
+
+    var cmd tea.Cmd
+    m.tasksTable, cmd = m.tasksTable.Update(msg)
+    newCursor := m.tasksTable.Cursor()
+
+    if oldCursor != newCursor {
+        if m.hoverTimer != nil {
+            m.hoverTimer.Stop()
+        }
+
+        // Neuen Timer starten
+        row := m.tasksTable.SelectedRow()
+        if len(row) > 0 {
+            taskKey := row[0]
+            m.hoveredTaskKey = taskKey
+            return m, hoverTimeoutCmd(taskKey, time.Duration(autoFetchTimeSec)*time.Second)
+        }
+    }
+
+    return m, cmd
 }
 
 // updateTaskContext handles task context menu updates

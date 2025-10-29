@@ -73,3 +73,24 @@ func loadLicenceContent() (string, error) {
 
 	return "License file not found. Please ensure LICENSE file exists in the project root or is available on GitHub.", nil
 }
+
+ // hoverTimeoutCmd erstellt einen Command für den Hover-Timer
+func hoverTimeoutCmd(taskKey string, duration time.Duration) tea.Cmd {
+    return func() tea.Msg {
+        time.Sleep(duration)
+        return hoverTimeoutMsg{taskKey: taskKey}
+    }
+}
+
+
+// fetchCommentsBackgroundCmd fetched Comments im Hintergrund für Caching
+func fetchCommentsBackgroundCmd(jc *jira.Client, taskKey string) tea.Cmd {
+    return func() tea.Msg {
+        comments, err := jc.FetchComments(context.Background(), taskKey)
+        return commentsCachedMsg{
+            taskKey:  taskKey,
+            comments: comments,
+            err:      err,
+        }
+    }
+}

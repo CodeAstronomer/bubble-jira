@@ -36,6 +36,7 @@ var (
 
     //Tasks
     taskViewHeight = 30
+    autoFetchTimeSec = 3
 
     //Help Footer
     cfg = config.DefaultConfig()

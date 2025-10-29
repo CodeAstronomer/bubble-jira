@@ -3,6 +3,7 @@ package ui
 import (
 	"bubble-jira/config"
 	"bubble-jira/jira"
+	"time"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/progress"
@@ -38,6 +39,10 @@ type model struct {
 	screenWidth      int
 	screenHeight     int
 	editingMode      string
+	hoverTimer      *time.Timer
+    hoveredTaskKey  string
+    cachedComments  map[string][]jira.Comment
+    fetchingComments bool
 }
 
 // fetchingModel represents the fetching state UI
@@ -118,6 +123,10 @@ func newModel(cfg *config.Config, jc *jira.Client) model {
 		commentsViewport: vp,
 		screenWidth:      terminalWidth,
 		screenHeight:     terminalHeight,
+		cachedComments:   make(map[string][]jira.Comment),
+        fetchingComments: false,
+        hoverTimer:       nil,
+        hoveredTaskKey:   "",
 	}
 }
 
