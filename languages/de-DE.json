@@ -1,0 +1,38 @@
+{
+  "MenuViewTasksTitle": "Tasks anzeigen",
+  "MenuSettingsTitle": "Einstellungen",
+  "MenuQuitTitle": "Beenden",
+  "MenuConfigTitle": "Konfiguration bearbeiten",
+  "MenuLicenceTitle": "Lizenz anzeigen",
+  "MenuBackTitle": "Zurück",
+  "ContextViewComments": "Kommentare anzeigen",
+  "MenuKeybindingTitle": "Tastaturbelegung",
+  "SetState": "Task status bearbeiten",
+  "CopyTitle": "Task Key kopieren",
+
+  "SettingsTitle": "Einstellungen",
+  "ConfigurationTitle": "Konfiguration",
+  "TaskTitle": "Task",
+  "menuTitle": "Menü",
+
+  "TaskListItemKey": "Key",
+  "TaskListItemTitle": "Titel",
+  "TaskListItemStatus": "Status",
+
+  "Open": "Offen",
+  "CurrentlyInProgress": "In Bearbeitung",
+  "Done": "Erledigt",
+  "Reopened": "Wiedereröffnet",
+  "Closed": "Geschlossen",
+  "Backlog": "Backlog",
+  "QM": "QM",
+  "Waiting": "Warten auf ...",
+  "Staging": "Zur Abnahme im Staging",
+
+  "HelpHeader": "Hilfe",
+  "HelpUsage": "Verwendung",
+  "HelpFlags": "Flags",
+  "HelpFlagHelp": "--help/-h Zeige diese Hilfe",
+  "HelpFlagVersion": "-v Zeige Versionsnummer",
+  "HelpFlagTasks": "-t Starte direkt in Aufgabenliste"
+}

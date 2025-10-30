@@ -121,12 +121,12 @@ func (cm contextMenuItem) FilterValue() string { return cm.title }
 // newModel creates the initial model state
 func newModel(cfg *config.Config, jc *jira.Client) model {
 	menuItems := []list.Item{
-		menuItem{title: MenuViewTasksTitle, enabled: cfg.IsValid()},
-		menuItem{title: MenuSettingsTitle, enabled: true},
-		menuItem{title: MenuQuitTitle, enabled: true},
-	}
+    	menuItem{title: Strings["MenuViewTasksTitle"], enabled: cfg.IsValid()},
+    	menuItem{title: Strings["MenuSettingsTitle"], enabled: true},
+    	menuItem{title: Strings["MenuQuitTitle"], enabled: true},
+    }
 	menu := list.New(menuItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
-	menu.Title = "Main Menu"
+	menu.Title = Strings["menuTitle"]
 	menu.SetShowHelp(true)
 	menu.SetShowPagination(false)
 

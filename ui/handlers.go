@@ -53,7 +53,7 @@ func newConfigListEditor(cfg *config.Config) configListEditor {
 	}
 
 	l := list.New(items, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
-	l.Title = "Configuration"
+	l.Title = Strings["ConfigurationTitle"]
 	l.SetShowHelp(true)
 	l.SetShowPagination(false)
 
@@ -85,7 +85,7 @@ func newKeybindingEditor(cfg *config.Config) configListEditor {
 	}
 
 	l := list.New(items, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
-	l.Title = "Configuration"
+	l.Title = Strings["ConfigurationTitle"]
 	l.SetShowHelp(true)
 	l.SetShowPagination(false)
 

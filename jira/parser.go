@@ -1,4 +1,5 @@
 package jira
+/*
 
 // Menu item constants
 const (
@@ -13,4 +14,4 @@ const (
 
 	SetState              = "Edit Task Status"
 	CopyTitle             = "Copy Task Key"
-)
+) */

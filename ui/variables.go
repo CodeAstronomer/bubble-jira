@@ -1,79 +1,84 @@
 package ui
 
 import (
-    "os"
-	"golang.org/x/term"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 
+	"golang.org/x/term"
 	"bubble-jira/config"
 )
 
 func getTerminalSize() (int, int) {
-    width, height, err := term.GetSize(int(os.Stdout.Fd()))
-    if err != nil {
-        width = 80
-    }
-    return width, height
+	width, height, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		width = 80
+	}
+	return width, height
 }
 
-const (
-    AppVersion = "1.0.0"
+// AppVersion stays constant
+const AppVersion = "1.0.0"
 
-	MenuViewTasksTitle  = "View Tasks"
-	MenuSettingsTitle   = "Settings"
-	MenuQuitTitle       = "Quit"
-	MenuConfigTitle     = "Edit Config"
-	MenuLicenceTitle    = "View Licence"
+// Lang can be configured, default to "de-DE"
+var Lang = "de-DE"
 
-	MenuBackTitle       = "Back"
-	ContextViewComments = "View Comments"
+// Strings holds all translated strings
+var Strings map[string]string
 
-	Lang                = "de"
+// JiraStatusMap maps status strings to IDs
+var JiraStatusMap map[string]int
 
-	Open                = "Offen"
-	CurrentlyInProgress = "Gerade in Arbeit"
-	Done                = "Erledigt"
-	Reopened            = "Wiedereröffnet"
-	Closed              = "Geschlossen"
-	Backlog             = "Backlog"
-	QM                  = "QM"
-	Waiting             = "Warten auf ..."
-	Staging             = "Zur Abnahme im Staging"
-)
-
+// Initialize everything that depends on terminal size
 var (
-    // General
-    width, height      = getTerminalSize()
-    topBottomPadding   = 1
-    leftRightPadding   = 2
-    terminalWidth      = (width-(leftRightPadding*leftRightPadding))
-    terminalHeight     = (height-(topBottomPadding*topBottomPadding))
-    closeAfterSec      = 2
-
-    //Tasks
-    taskViewHeight = 30
-    autoFetchTimeSec = 3
-
-    //Jira
-    jiraStatusMap = map[string]int{
-        Open: 11,
-        CurrentlyInProgress: 21,
-        Done: 31,
-        Reopened: 41,
-        Closed: 51,
-        Backlog: 61,
-        QM: 71,
-        Waiting: 81,
-        Staging: 91,
-    }
-
-    //Help Footer
-    cfg = config.DefaultConfig()
-    exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter = cfg.GetKeys()
-    keyMap = map[string]string{
-        keyUp:            "↑",
-        keyDown:          "↓",
-        keyFastDown:      "pgDown",
-        keyFastUp:        "pgUp",
-        keyEnter:         "⏎",
-    }
+	width, height       = getTerminalSize()
+	topBottomPadding    = 1
+	leftRightPadding    = 2
+	terminalWidth       = width - (leftRightPadding * 2)
+	terminalHeight      = height - (topBottomPadding * 2)
+	closeAfterSec       = 2
+	taskViewHeight      = 30
+	autoFetchTimeSec    = 3
+	cfg                 = config.DefaultConfig()
+	exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter = cfg.GetKeys()
+	keyMap              = map[string]string{
+		keyUp:       "↑",
+		keyDown:     "↓",
+		keyFastDown: "pgDown",
+		keyFastUp:   "pgUp",
+		keyEnter:    "⏎",
+	}
 )
+
+// loadStrings loads the JSON translation file for the current language
+func loadStrings(lang string) {
+	path := filepath.Join("languages", lang+".json")
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to read language file '%s': %v", path, err))
+	}
+	err = json.Unmarshal(data, &Strings)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to parse language JSON: %v", err))
+	}
+}
+
+// Init must be called at program start to load strings and setup maps
+func Init() {
+	loadStrings(Lang)
+
+	// Initialize Jira status map dynamically using Strings
+	JiraStatusMap = map[string]int{
+		Strings["Open"]:                11,
+		Strings["CurrentlyInProgress"]: 21,
+		Strings["Done"]:                31,
+		Strings["Reopened"]:            41,
+		Strings["Closed"]:              51,
+		Strings["Backlog"]:             61,
+		Strings["QM"]:                  71,
+		Strings["Waiting"]:             81,
+		Strings["Staging"]:             91,
+	}
+}

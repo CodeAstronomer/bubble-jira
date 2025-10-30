@@ -20,18 +20,21 @@ func main() {
 
 	flag.Parse()
 
+	ui.Init()
+
     // Handle help/version flags BEFORE running the program
     if *helpFlag {
-        fmt.Println("Usage: jira [flags]")
-        fmt.Println("Flags:")
-        fmt.Println("  --help/ -h       Show this help message")
-        fmt.Println("  -v           Show version")
-        fmt.Println("  -t           Start directly in Task List View")
+        fmt.Println(ui.Strings["HelpHeader"])
+        fmt.Println(ui.Strings["HelpUsage"] + ": jira [flags]")
+        fmt.Println(ui.Strings["HelpFlags"] + ":")
+        fmt.Println("  --help/ -h    " + ui.Strings["HelpFlagHelp"])
+        fmt.Println("  -v           " + ui.Strings["HelpFlagVersion"])
+        fmt.Println("  -t           " + ui.Strings["HelpFlagTasks"])
         return
     }
 
     if *versionFlag {
-		fmt.Println("jira version", ui.AppVersion)
+        fmt.Println("jira version", ui.AppVersion)
         return
     }
 

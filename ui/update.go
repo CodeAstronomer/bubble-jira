@@ -35,13 +35,13 @@ func (m model) updateMenu(msg tea.Msg) (tea.Model, tea.Cmd) {
 			selected := m.menu.SelectedItem()
 			menuItemSelected := selected.(menuItem)
 
-			if !menuItemSelected.enabled && menuItemSelected.title == jira.MenuViewTasksTitle {
+			if !menuItemSelected.enabled && menuItemSelected.title == Strings["MenuViewTasksTitle"] {
 				m.configValidError = "⚠ Config incomplete! Please fill all fields in Settings > Edit Config first."
 				return m, nil
 			}
 
 			switch menuItemSelected.title {
-			case MenuViewTasksTitle:
+			case Strings["MenuViewTasksTitle"]:
 				m.state = "fetching"
 				m.fetching = newFetchingModel()
 				m.configValidError = ""
@@ -50,20 +50,20 @@ func (m model) updateMenu(msg tea.Msg) (tea.Model, tea.Cmd) {
 					tickFetchCmd(),
 					m.fetching.spinner.Tick,
 				)
-			case MenuSettingsTitle:
+			case Strings["MenuSettingsTitle"]:
                 m.state = "settings"
                 m.configValidError = ""
                 settingsItems := []list.Item{
-                    menuItem{title: jira.MenuConfigTitle, enabled: true},
-                    menuItem{title: jira.MenuLicenceTitle, enabled: true},
-                    menuItem{title: jira.MenuKeybindingTitle, enabled: true},
-                    menuItem{title: jira.MenuBackTitle, enabled: true},
+                    menuItem{title: Strings["MenuConfigTitle"], enabled: true},
+                    menuItem{title: Strings["MenuLicenceTitle"], enabled: true},
+                    menuItem{title: Strings["MenuKeybindingTitle"], enabled: true},
+                    menuItem{title: Strings["MenuBackTitle"], enabled: true},
                 }
                 m.settings = list.New(settingsItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
-                m.settings.Title = "Settings"
+                m.settings.Title = Strings["SettingsTitle"]
                 m.settings.SetShowHelp(true)
                 m.settings.SetShowPagination(false)
-			case MenuQuitTitle:
+			case Strings["MenuQuitTitle"]:
 				return m, tea.Quit
 			}
 		}
@@ -83,21 +83,21 @@ func (m model) updateSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 			menuItemSelected := selected.(menuItem)
 
 			switch menuItemSelected.title {
-			case jira.MenuConfigTitle:
+			case Strings["MenuConfigTitle"]:
 				m.configList = newConfigListEditor(m.cfg)
 				m.editingMode = "config"
 				m.state = "config"
 				return m, nil
-			case jira.MenuLicenceTitle:
+			case Strings["MenuLicenceTitle"]:
 				m.licenceLoading = true
 				m.state = "licence"
 				return m, loadLicenceCmd()
-			case jira.MenuKeybindingTitle:
+			case Strings["MenuKeybindingTitle"]:
                 m.configList = newKeybindingEditor(m.cfg)
 				m.editingMode = "keybindings"
                 m.state = "config"
                 return m, nil
-			case jira.MenuBackTitle:
+			case Strings["MenuBackTitle"]:
 				m.state = "menu"
 				return m, nil
 			}
@@ -186,9 +186,9 @@ func (m model) updateFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
         	}
 
         	columns := []table.Column{
-        		{Title: "Key", Width: keyWidth},
-        		{Title: "Title", Width: titleWidth},
-        		{Title: "Status", Width: statusWidth},
+        		{Title: Strings["TaskListItemKey"], Width: keyWidth},
+        		{Title: Strings["TaskListItemTitle"], Width: titleWidth},
+        		{Title: Strings["TaskListItemStatus"], Width: statusWidth},
         	}
 
         	t := table.New(
@@ -340,13 +340,13 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
 
         	// Create task settings menu
         	taskSettingsItems := []list.Item{
-            	menuItem{title: jira.SetState, enabled: true},
-            	menuItem{title: jira.CopyTitle, enabled: true},
-            	menuItem{title: MenuBackTitle, enabled: true},
+            	menuItem{title: Strings["SetState"], enabled: true},
+            	menuItem{title: Strings["CopyTitle"], enabled: true},
+            	menuItem{title: Strings["MenuBackTitle"], enabled: true},
             }
 
             m.taskSettings = list.New(taskSettingsItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
-            m.taskSettings.Title = fmt.Sprintf("Task: %s", key)
+            m.taskSettings.Title = fmt.Sprintf(Strings["TaskTitle"] + ": %s", key)
             m.taskSettings.SetShowHelp(true)
             m.taskSettings.SetShowPagination(false)
             m.state = "task-settings-list"
@@ -388,7 +388,7 @@ func (m model) updateTaskContext(msg tea.Msg) (tea.Model, tea.Cmd) {
 			selected := m.taskContextMenu.SelectedItem()
 			menuItem := selected.(contextMenuItem)
 
-			if menuItem.title == ContextViewComments && m.selectedIssue != nil {
+			if menuItem.title == Strings["ContextViewComments"] && m.selectedIssue != nil {
 				m.commentsLoading = true
 				m.fetching = newFetchingModel()
 				m.state = "comments-fetching"
@@ -543,13 +543,13 @@ func (m model) updateConfigList(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case contains(exitKeys, msg.String()):
             m.state = "settings"
             settingsItems := []list.Item{
-                menuItem{title: jira.MenuConfigTitle, enabled: true},
-                menuItem{title: jira.MenuLicenceTitle, enabled: true},
-                menuItem{title: jira.MenuKeybindingTitle, enabled: true},
-                menuItem{title: jira.MenuBackTitle, enabled: true},
+                menuItem{title: Strings["MenuConfigTitle"], enabled: true},
+                menuItem{title: Strings["MenuLicenceTitle"], enabled: true},
+                menuItem{title: Strings["MenuKeybindingTitle"], enabled: true},
+                menuItem{title: Strings["MenuBackTitle"], enabled: true},
             }
             m.settings = list.New(settingsItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
-            m.settings.Title = "Settings"
+            m.settings.Title = Strings["SettingsTitle"]
             m.settings.SetShowHelp(true)
             m.settings.SetShowPagination(false)
             return m, nil
@@ -637,11 +637,11 @@ func (m model) updateTaskSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 			menuItemSelected := selected.(menuItem)
 
 			switch menuItemSelected.title {
-			case jira.SetState:
+			case Strings["SetState"]:
 				m.state = "task-status"
 				return m, nil
 
-			case jira.CopyTitle:
+			case Strings["CopyTitle"]:
                 if m.jiraStatusInput.key != "" {
                     // Copy the task key to clipboard
                     err := clipboard.WriteAll("["+m.jiraStatusInput.key+"]")
@@ -655,7 +655,7 @@ func (m model) updateTaskSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
                 }
                 return m, nil
 
-			case MenuBackTitle:
+			case Strings["MenuBackTitle"]:
 				m.state = "tasks"
 				return m, nil
 			}
@@ -670,7 +670,17 @@ func (m model) updateTaskSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // updateTaskStatus
 func (m model) updateTaskStatus(msg tea.Msg) (tea.Model, tea.Cmd) {
-	statuses := []string{Open, CurrentlyInProgress, Done, Reopened, Closed, Backlog, QM, Waiting, Staging}
+	statuses := []string{
+    	Strings["Open"],
+    	Strings["CurrentlyInProgress"],
+    	Strings["Done"],
+    	Strings["Reopened"],
+    	Strings["Closed"],
+    	Strings["Backlog"],
+    	Strings["QM"],
+    	Strings["Waiting"],
+    	Strings["Staging"],
+    }
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -701,7 +711,7 @@ func (m model) updateTaskStatus(msg tea.Msg) (tea.Model, tea.Cmd) {
 			selectedStatus := statuses[m.jiraStatusInput.cursor]
 			m.jiraStatusInput.choice = selectedStatus
 			m.state = "comments-fetching"
-            var selectedID = jiraStatusMap[selectedStatus]
+            var selectedID = JiraStatusMap[selectedStatus]
 			return m, fetchStatusCmd(m.jc, m.jiraStatusInput.key, selectedID)
 
 		default:
