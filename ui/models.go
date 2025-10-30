@@ -66,7 +66,7 @@ type model struct {
         focusSend bool
         issueKey  string
     }
-    fetchCommentsAfterProgress bool
+    isFromAddComments bool
 }
 
 // fetchingModel represents the fetching state UI
@@ -239,7 +239,7 @@ func (m model) View() string {
     case "task-settings-list":
         return menuStyle.Render(m.taskSettings.View())
     case "add-comment":
-        return fetchingStyle.Render(m.addCommentView())
+        return m.addCommentView()
 	default:
 		return "Unknown state"
 	}

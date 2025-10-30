@@ -429,9 +429,10 @@ func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(tickFetchCmd(), progressCmd)
 		}
 
+
         // Progress is done
-        if m.fetchCommentsAfterProgress {
-            m.fetchCommentsAfterProgress = false
+        if m.isFromAddComments {
+            m.isFromAddComments = false
             return m, fetchCommentsCmd(m.jc, m.addCommentInput.issueKey)
         }
 
@@ -451,11 +452,6 @@ func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.fetching.progress.SetPercent(0.0)
 			m.fetching.status = m.fetching.stages[0]
 			m.fetching.fromStatus = true
-
-			// Set flag to fetch comments after progress finishes
-            if m.state == "comments-fetching" {
-                m.fetchCommentsAfterProgress = true
-            }
 
 			return m, tickFetchCmd()
 		}
@@ -811,6 +807,10 @@ func (m model) updateAddCommentInput(msg tea.Msg) (tea.Model, tea.Cmd) {
                 if len(text) == 0 || len(text) > 1000 {
                     return m, nil // do not submit invalid comment
                 }
+
+
+			    // Set flag to fetch comments after progress finishes
+                m.isFromAddComments = true
 
                 m.fetching = newFetchingModel()
                 m.state = "comments-fetching"

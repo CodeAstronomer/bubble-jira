@@ -206,7 +206,7 @@ func (c *Client) FetchComments(ctx context.Context, issueKey string) ([]Comment,
 // PostStatus changes the status of a Jira issue using the transition ID.
 // Returns the HTTP status code and an error if something goes wrong.
 func (c *Client) PostStatus(ctx context.Context, issueKey string, selectedID int) (int, error) {
-	/* if err := c.validateConfig(); err != nil {
+	/*  if err := c.validateConfig(); err != nil {
 		return 0, err
 	}
 
