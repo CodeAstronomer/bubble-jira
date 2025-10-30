@@ -54,7 +54,7 @@ func (m model) tasksTableView() string {
 	content.Grow(512)
 	content.WriteString(tableBaseStyle.Render(m.tasksTable.View()))
 	content.WriteString("\n")
-	content.WriteString(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": navigate • "+ keyMap[keyEnter] +": select • "+ keyExitKeysStr +": back"))
+	content.WriteString(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": navigate • ␣: comments • " + keyMap[keyEnter] +": select • "+ keyExitKeysStr +": back"))
 	return content.String()
 }
 

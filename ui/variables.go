@@ -41,9 +41,6 @@ var (
     taskViewHeight = 30
     autoFetchTimeSec = 3
 
-    //Git
-    keyLeft = true
-
     //Jira
     jiraStatusMap = map[string]int{
         "done": 31,

@@ -342,7 +342,7 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
         	taskSettingsItems := []list.Item{
             	menuItem{title: jira.SetState, enabled: true},
             	menuItem{title: jira.CopyTitle, enabled: true},
-            	menuItem{title: jira.Back, enabled: true},
+            	menuItem{title: MenuBackTitle, enabled: true},
             }
 
             m.taskSettings = list.New(taskSettingsItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
@@ -655,7 +655,7 @@ func (m model) updateTaskSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
                 }
                 return m, nil
 
-			case jira.Back:
+			case MenuBackTitle:
 				m.state = "tasks"
 				return m, nil
 			}
