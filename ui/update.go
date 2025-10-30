@@ -429,6 +429,12 @@ func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(tickFetchCmd(), progressCmd)
 		}
 
+        // Progress is done
+        if m.fetchCommentsAfterProgress {
+            m.fetchCommentsAfterProgress = false
+            return m, fetchCommentsCmd(m.jc, m.addCommentInput.issueKey)
+        }
+
 		// Only quit automatically if this animation came from statusCodeMsg
 		if m.fetching.fromStatus {
 			fmt.Printf("\nThis window will close in %d seconds.\n", closeAfterSec)
@@ -445,6 +451,11 @@ func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.fetching.progress.SetPercent(0.0)
 			m.fetching.status = m.fetching.stages[0]
 			m.fetching.fromStatus = true
+
+			// Set flag to fetch comments after progress finishes
+            if m.state == "comments-fetching" {
+                m.fetchCommentsAfterProgress = true
+            }
 
 			return m, tickFetchCmd()
 		}
@@ -520,6 +531,33 @@ func (m model) updateCommentsView(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch {
+
+		case msg.String() == "n": //keyNewComment
+            row := m.tasksTable.SelectedRow()
+            if len(row) == 0 {
+                return m, nil
+            }
+            key := row[0]
+
+            ti := textinput.New()
+            ti.Placeholder = "Write your comment..."
+            ti.Focus()
+            ti.CharLimit = 1000
+            ti.Width = terminalWidth - 10
+
+            m.addCommentInput = struct {
+                input     textinput.Model
+                focusSend bool
+                issueKey  string
+            }{
+                input:     ti,
+                focusSend: false,
+                issueKey:  key,
+            }
+
+            m.state = "add-comment"
+            return m, nil
+
 		case contains(exitKeys, msg.String()):
 			m.state = "tasks"
 			m.selectedIssue = nil
@@ -761,4 +799,55 @@ func (m model) updateTaskStatus(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, nil
+}
+
+func (m model) updateAddCommentInput(msg tea.Msg) (tea.Model, tea.Cmd) {
+    switch msg := msg.(type) {
+    case tea.KeyMsg:
+        switch msg.String() {
+        case keyEnter:
+            if m.addCommentInput.focusSend {
+                text := m.addCommentInput.input.Value()
+                if len(text) == 0 || len(text) > 1000 {
+                    return m, nil // do not submit invalid comment
+                }
+
+                m.fetching = newFetchingModel()
+                m.state = "comments-fetching"
+                return m, createNewComment(m.jc, m.addCommentInput.issueKey, text)
+
+            } else {
+                // toggle focus to send button
+                m.addCommentInput.focusSend = true
+                m.addCommentInput.input.Blur()
+            }
+            return m, nil
+
+        case keyUp, keyDown:
+            m.addCommentInput.focusSend = !m.addCommentInput.focusSend
+            if !m.addCommentInput.focusSend {
+                m.addCommentInput.input.Focus()
+            } else {
+                m.addCommentInput.input.Blur()
+            }
+            return m, nil
+
+        case "esc":
+            m.state = "tasks"
+            return m, nil
+        }
+
+    case tea.WindowSizeMsg:
+        m.screenWidth = msg.Width
+        m.screenHeight = msg.Height
+    }
+
+    // Update text input if focused
+    if !m.addCommentInput.focusSend {
+        var cmd tea.Cmd
+        m.addCommentInput.input, cmd = m.addCommentInput.input.Update(msg)
+        return m, cmd
+    }
+
+    return m, nil
 }

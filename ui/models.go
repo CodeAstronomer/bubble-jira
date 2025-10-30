@@ -61,6 +61,12 @@ type model struct {
         cursor   int
         choice   string
     }
+    addCommentInput struct {
+        input     textinput.Model
+        focusSend bool
+        issueKey  string
+    }
+    fetchCommentsAfterProgress bool
 }
 
 // fetchingModel represents the fetching state UI
@@ -194,6 +200,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         return m.updateTaskStatus(msg)
 	case "task-settings-list":
         return m.updateTaskSettings(msg)
+    case "add-comment":
+        return m.updateAddCommentInput(msg)
 	default:
 		return m, nil
 	}
@@ -230,6 +238,8 @@ func (m model) View() string {
         return fetchingStyle.Render(m.taskStatusView())
     case "task-settings-list":
         return menuStyle.Render(m.taskSettings.View())
+    case "add-comment":
+        return m.addCommentView()
 	default:
 		return "Unknown state"
 	}

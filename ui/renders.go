@@ -87,7 +87,7 @@ func (m model) commentsView() string {
 	content.WriteString(m.commentsViewport.View())
 
     // Footer
-    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": scroll • "+ keyExitKeysStr +": back"))
+    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": scroll • "+ keyMap[keyNewComment] +": Add Comment • "+ keyExitKeysStr +": back"))
 
     // Dynamisch leere Zeilen berechnen, um Footer nach unten zu schieben
     contentHeight := lipgloss.Height(content.String())
@@ -201,4 +201,39 @@ func (m model) taskStatusView() string {
         Width(terminalWidth).
         Height(terminalHeight).
         Render(fmt.Sprintf("%s%s\n%s", content.String(), repeatNewline(emptyLines), footer))
+}
+
+// addCommentView renders the Add Comment input view
+func (m model) addCommentView() string {
+    var content strings.Builder
+    content.Grow(512)
+
+    content.WriteString("Add a comment (max 1000 chars):\n\n")
+    content.WriteString(m.addCommentInput.input.View())
+    content.WriteString("\n\n")
+
+    // Render send button
+    if m.addCommentInput.focusSend {
+        content.WriteString(focusedButton)
+    } else {
+        content.WriteString(blurredButton)
+    }
+
+    // Footer
+    footer := lipgloss.NewStyle().Faint(true).Render(
+        "↑/↓: navigate • Enter: send • Esc: cancel",
+    )
+
+    // Dynamic padding
+    contentHeight := lipgloss.Height(content.String())
+    footerHeight := lipgloss.Height(footer)
+    emptyLines := terminalHeight - contentHeight - footerHeight
+    if emptyLines < 0 {
+        emptyLines = 0
+    }
+
+    return lipgloss.NewStyle().
+        Width(terminalWidth).
+        Height(terminalHeight).
+        Render(content.String() + repeatNewline(emptyLines) + "\n" + footer)
 }

@@ -42,13 +42,14 @@ var (
 	closeAfterSec       = 2
 	taskViewHeight      = 30
 	autoFetchTimeSec    = 3
-	exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter = cfg.GetKeys()
+	exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter, keyNewComment = cfg.GetKeys()
 	keyMap              = map[string]string{
 		keyUp:       "↑",
 		keyDown:     "↓",
 		keyFastDown: "pgDown",
 		keyFastUp:   "pgUp",
 		keyEnter:    "⏎",
+		keyNewComment: "n",
 	}
 )
 
