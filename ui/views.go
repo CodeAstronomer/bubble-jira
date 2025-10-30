@@ -121,7 +121,7 @@ func parseCommentBody(bodyJSON string) string {
 // renderCommentsToMarkdown converts comments to markdown format
 func renderCommentsToMarkdown(comments []jira.Comment) string {
 	if len(comments) == 0 {
-		return "No Comments Found"
+		return Strings["noComments"]
 	}
 
 	var result strings.Builder

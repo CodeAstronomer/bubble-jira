@@ -28,10 +28,14 @@ func fetchJiraTasksCmd(jc *jira.Client) tea.Cmd {
 
 // fetchCommentsCmd creates a command to fetch comments for an issue
 func fetchCommentsCmd(jc *jira.Client, issueKey string) tea.Cmd {
-	return func() tea.Msg {
-		comments, err := jc.FetchComments(context.Background(), issueKey)
-		return commentsFetchedMsg{comments: comments, err: err}
-	}
+    return func() tea.Msg {
+        comments, err := jc.FetchComments(context.Background(), issueKey)
+        return commentsFetchedMsg{
+            taskKey:  issueKey,
+            comments: comments,
+            err:      err,
+        }
+    }
 }
 
 // fetchStatusCmd

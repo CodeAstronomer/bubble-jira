@@ -12,6 +12,8 @@
   "SetState": "Edit Task Status",
   "CopyTitle": "Copy Task Key",
 
+  "noComments": "No Comments Found",
+
   "SettingsTitle": "Settings",
   "ConfigurationTitle": "Configuration",
   "TaskTitle": "Task",

@@ -13,10 +13,11 @@ type issuesFetchedMsg struct {
 	err    error
 }
 
-// commentsFetchedMsg message for when comments are fetched
+// ui/messages.go
 type commentsFetchedMsg struct {
-	comments []jira.Comment
-	err      error
+    taskKey  string
+    comments []jira.Comment
+    err      error
 }
 
 // licenceLoadedMsg message for when license is loaded

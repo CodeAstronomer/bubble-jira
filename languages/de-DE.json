@@ -12,6 +12,8 @@
   "SetState": "Task status bearbeiten",
   "CopyTitle": "Task Key kopieren",
 
+  "noComments": "Keine Kommentare gefunden",
+
   "SettingsTitle": "Einstellungen",
   "ConfigurationTitle": "Konfiguration",
   "TaskTitle": "Task",
