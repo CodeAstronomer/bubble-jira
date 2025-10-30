@@ -23,6 +23,7 @@ type Config struct {
 	APIToken string `json:"api_token"`
 	JQL      string `json:"jql"`
 	Keys     Keys   `json:"keys"`
+	Lang     string `json:"lang"`
 }
 
 // DefaultConfig returns a sensible default.
@@ -40,6 +41,7 @@ func DefaultConfig() *Config {
             FastDown: "pgdown",
             Confirm: "enter",
         },
+        Lang: "de-DE",
 	}
 }
 

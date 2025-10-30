@@ -1,4 +1,6 @@
 {
+  "language": "Sprache",
+
   "MenuViewTasksTitle": "Tasks anzeigen",
   "MenuSettingsTitle": "Einstellungen",
   "MenuQuitTitle": "Beenden",

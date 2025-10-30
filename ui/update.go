@@ -2,8 +2,10 @@ package ui
 
 import (
 	"bubble-jira/jira"
+	"bubble-jira/config"
     "fmt"
     "time"
+    "regexp"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/progress"
@@ -14,6 +16,8 @@ import (
     "github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+var languageRegex = regexp.MustCompile(`^[a-z]{2}-[A-Z]{2}$`)
 
 func contains(slice []string, val string) bool {
     for _, s := range slice {
@@ -587,22 +591,50 @@ func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 
 		case msg.String() == keyEnter:
-			if m.configInput.focusSave {
-				m.configList.fields[m.editingFieldIdx].value = m.configInput.input.Value()
-				m.updateConfigFields()
+            if m.configInput.focusSave {
+                value := m.configInput.input.Value()
 
-				// Recreate the appropriate editor based on mode
-				if m.editingMode == "keybindings" {
-					m.configList = newKeybindingEditor(m.cfg)
-				} else {
-					m.configList = newConfigListEditor(m.cfg)
-				}
-				m.state = "config"
-				return m, nil
-			}
+                if m.editingMode == "keybindings" && m.configInput.key == Strings["language"] {
+                    if !languageRegex.MatchString(value) {
+                        m.configInput.focusSave = true
+                        return m, nil
+                    }
+
+                    isAllowed := false
+                    for _, lang := range allowedLanguages {
+                        if value == lang {
+                            isAllowed = true
+                            break
+                        }
+                    }
+
+                    if !isAllowed {
+                        m.configInput.focusSave = true
+                        return m, nil
+                    }
+
+                    m.cfg.Lang = value
+                    if err := config.Save(m.cfg); err != nil {
+                        m.configInput.focusSave = true
+                        return m, nil
+                    }
+
+                    m.configValidError = ""
+                }
+
+                m.configList.fields[m.editingFieldIdx].value = value
+                m.updateConfigFields()
+
+                if m.editingMode == "keybindings" {
+                    m.configList = newKeybindingEditor(m.cfg)
+                } else {
+                    m.configList = newConfigListEditor(m.cfg)
+                }
+                m.state = "config"
+                return m, nil
+            }
 
 		case contains(exitKeys, msg.String()):
-			// Recreate the appropriate editor based on mode
 			if m.editingMode == "keybindings" {
 				m.configList = newKeybindingEditor(m.cfg)
 			} else {

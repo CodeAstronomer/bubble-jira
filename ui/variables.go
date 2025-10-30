@@ -22,8 +22,7 @@ func getTerminalSize() (int, int) {
 // AppVersion stays constant
 const AppVersion = "1.0.0"
 
-// Lang can be configured, default to "de-DE"
-var Lang = "de-DE"
+var allowedLanguages = []string{"de-DE"}
 
 // Strings holds all translated strings
 var Strings map[string]string
@@ -33,6 +32,8 @@ var JiraStatusMap map[string]int
 
 // Initialize everything that depends on terminal size
 var (
+	cfg, _              = config.Load()
+	Lang                = cfg.Lang
 	width, height       = getTerminalSize()
 	topBottomPadding    = 1
 	leftRightPadding    = 2
@@ -41,7 +42,6 @@ var (
 	closeAfterSec       = 2
 	taskViewHeight      = 30
 	autoFetchTimeSec    = 3
-	cfg                 = config.DefaultConfig()
 	exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter = cfg.GetKeys()
 	keyMap              = map[string]string{
 		keyUp:       "↑",
@@ -67,6 +67,10 @@ func loadStrings(lang string) {
 
 // Init must be called at program start to load strings and setup maps
 func Init() {
+    if cfg == nil {
+        panic("Config konnte nicht geladen werden")
+    }
+
 	loadStrings(Lang)
 
 	// Initialize Jira status map dynamically using Strings
