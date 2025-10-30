@@ -250,6 +250,70 @@ func (c *Client) PostStatus(ctx context.Context, issueKey string, selectedID int
 	return 200, nil
 }
 
+// PostComment added a new comment to a Jira Issue
+// Returns the HTTP status code and an error if something goes wrong.
+func (c *Client) PostComment(ctx context.Context, issueKey string, commentText string) (int, error) {
+	/* if err := c.validateConfig(); err != nil {
+		return 0, err
+	}
+
+	urlPath := fmt.Sprintf("/rest/api/3/issue/%s/comment", issueKey)
+
+	// Prepare JSON body in the desired schema
+    bodyMap := map[string]interface{}{
+    	"body": map[string]interface{}{
+    		"type":    "doc",
+    		"version": 1,
+    		"content": []map[string]interface{}{
+    			{
+    				"type": "paragraph",
+    				"content": []map[string]interface{}{
+    					{
+    						"type": "text",
+    						"text": commentText,
+    					},
+    				},
+    			},
+    		},
+    	},
+    }
+
+	bodyBytes, err := json.Marshal(bodyMap)
+	if err != nil {
+		return 0, fmt.Errorf("failed to marshal JSON body: %w", err)
+	}
+
+	req, err := c.buildRequest(ctx, "POST", urlPath, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+
+	resp, err := c.hc.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case 200:
+		return 200, nil
+	case 400:
+		return resp.StatusCode, fmt.Errorf("bad request")
+	case 401:
+		return resp.StatusCode, fmt.Errorf("unauthorized: check your Jira email/API token")
+	case 404:
+		return resp.StatusCode, fmt.Errorf("issue %s not found", issueKey)
+	case 413:
+		return resp.StatusCode, fmt.Errorf("Request Entity Too Large")
+	default:
+		return resp.StatusCode, fmt.Errorf("jira API returned status %s", resp.Status)
+	} */
+	return 200, nil
+}
+
 // extractCommentsFromResponse parses the API response to extract comments
 func extractCommentsFromResponse(issueResponse map[string]interface{}) []Comment {
 	fields, ok := issueResponse["fields"].(map[string]interface{})

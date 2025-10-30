@@ -38,10 +38,18 @@ func fetchCommentsCmd(jc *jira.Client, issueKey string) tea.Cmd {
     }
 }
 
-// fetchStatusCmd
+// UpdateState of Jira Task
 func fetchStatusCmd(jc *jira.Client, issueKey string, selectedID int) tea.Cmd {
 	return func() tea.Msg {
 		statusCode, _ := jc.PostStatus(context.Background(), issueKey, selectedID)
+		return statusCodeMsg{Code: statusCode}
+	}
+}
+
+// createNewComment
+func createNewComment(jc *jira.Client, issueKey string, commentText string) tea.Cmd {
+	return func() tea.Msg {
+		statusCode, _ := jc.PostComment(context.Background(), issueKey, commentText)
 		return statusCodeMsg{Code: statusCode}
 	}
 }
