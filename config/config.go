@@ -14,7 +14,7 @@ type Keys struct {
     FastUp   string   `json:"fast_up"`
     FastDown string   `json:"fast_down"`
     Confirm  string   `json:"confirm"`
-    addComment string   `json:"addcomment"`
+    Comment string   `json:"comment"`
 }
 
 // Config holds Jira connection settings.
@@ -41,7 +41,7 @@ func DefaultConfig() *Config {
             FastUp:   "pgup",
             FastDown: "pgdown",
             Confirm: "enter",
-            addComment: "n",
+            Comment: "n",
         },
         Lang: "de-DE",
 	}
@@ -126,7 +126,7 @@ func (c *Config) GetKeys() (exitKeys []string, exitKeysStr string, up string, do
     fastUp = c.Keys.FastUp
     fastDown = c.Keys.FastDown
     enter = c.Keys.Confirm
-    comment = c.Keys.addComment
+    comment = c.Keys.Comment
 
     return
 }

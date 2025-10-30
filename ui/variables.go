@@ -49,7 +49,6 @@ var (
 		keyFastDown: "pgDown",
 		keyFastUp:   "pgUp",
 		keyEnter:    "⏎",
-		keyNewComment: "n",
 	}
 )
 

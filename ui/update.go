@@ -532,7 +532,7 @@ func (m model) updateCommentsView(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch {
 
-		case msg.String() == "n": //keyNewComment
+		case msg.String() == keyNewComment:
             row := m.tasksTable.SelectedRow()
             if len(row) == 0 {
                 return m, nil

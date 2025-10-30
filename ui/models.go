@@ -239,7 +239,7 @@ func (m model) View() string {
     case "task-settings-list":
         return menuStyle.Render(m.taskSettings.View())
     case "add-comment":
-        return m.addCommentView()
+        return fetchingStyle.Render(m.addCommentView())
 	default:
 		return "Unknown state"
 	}

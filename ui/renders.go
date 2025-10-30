@@ -87,7 +87,7 @@ func (m model) commentsView() string {
 	content.WriteString(m.commentsViewport.View())
 
     // Footer
-    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": scroll • "+ keyMap[keyNewComment] +": Add Comment • "+ keyExitKeysStr +": back"))
+    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": scroll • "+ keyNewComment +": Add Comment • "+ keyExitKeysStr +": back"))
 
     // Dynamisch leere Zeilen berechnen, um Footer nach unten zu schieben
     contentHeight := lipgloss.Height(content.String())
