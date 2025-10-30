@@ -150,7 +150,7 @@ func (m model) configInputView() string {
 
 // taskStatusView
 func (m model) taskStatusView() string {
-    var statuses = []string{"done", "wa", "staging"}
+    var statuses = []string{Open, CurrentlyInProgress, Done, Reopened, Closed, Backlog, QM, Waiting, Staging}
 	var content strings.Builder
 	content.Grow(256)
 

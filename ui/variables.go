@@ -26,6 +26,18 @@ const (
 
 	MenuBackTitle       = "Back"
 	ContextViewComments = "View Comments"
+
+	Lang                = "de"
+
+	Open                = "Offen"
+	CurrentlyInProgress = "Gerade in Arbeit"
+	Done                = "Erledigt"
+	Reopened            = "Wiedereröffnet"
+	Closed              = "Geschlossen"
+	Backlog             = "Backlog"
+	QM                  = "QM"
+	Waiting             = "Warten auf ..."
+	Staging             = "Zur Abnahme im Staging"
 )
 
 var (
@@ -43,9 +55,15 @@ var (
 
     //Jira
     jiraStatusMap = map[string]int{
-        "done": 31,
-        "wa": 81,
-        "staging": 91,
+        Open: 11,
+        CurrentlyInProgress: 21,
+        Done: 31,
+        Reopened: 41,
+        Closed: 51,
+        Backlog: 61,
+        QM: 71,
+        Waiting: 81,
+        Staging: 91,
     }
 
     //Help Footer
