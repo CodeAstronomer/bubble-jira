@@ -13,9 +13,8 @@ type Program struct {
 }
 
 // NewProgram creates a new Bubble Tea program
-func NewProgram(cfg *config.Config, jc *jira.Client, workDir string) *Program {
+func NewProgram(cfg *config.Config, jc *jira.Client) *Program {
 	m := newModel(cfg, jc)
-	m.workDir = workDir
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	return &Program{p: p}
 }
@@ -30,10 +29,9 @@ func (pr *Program) Quit() {
 	pr.p.Send(tea.Quit)
 }
 
-func (pr *Program) StartWithTasks(cfg *config.Config, jc *jira.Client, workDir string) error {
+func (pr *Program) StartWithTasks(cfg *config.Config, jc *jira.Client) error {
 	// Create model in fetching state
 	m := newModel(cfg, jc)
-	m.workDir = workDir
 	m.state = "fetching"
 	m.fetching = newFetchingModel()
 	m.configValidError = ""

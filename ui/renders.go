@@ -148,44 +148,8 @@ func (m model) configInputView() string {
         Render(fmt.Sprintf("%s%s\n%s", content.String(), repeatNewline(emptyLines), footer))
 }
 
-// commitInputViewGit renders the git commit input screen
-func (m model) commitInputViewGit() string {
-    var content strings.Builder
-    content.Grow(256)
-
-    content.WriteString("🪶 Git Commit\n\n")
-    content.WriteString("Issue: ")
-    content.WriteString(m.commitInput.key)
-    content.WriteString("\nLeave empty to use the task title as the commit message.")
-    content.WriteString("\n\nMessage:\n")
-
-    m.commitInput.input.Prompt = ""
-    content.WriteString(m.commitInput.input.View())
-
-    // Footer
-    footer := lipgloss.NewStyle().Faint(true).Render(
-        keyMap[keyUp]+"/"+keyMap[keyDown]+": navigate • "+
-            keyMap[keyEnter]+": confirm • "+
-            keyExitKeysStr+": cancel",
-    )
-
-    // Dynamisch leere Zeilen berechnen, um Footer nach unten zu schieben
-    contentHeight := lipgloss.Height(content.String())
-    footerHeight := lipgloss.Height(footer)
-    emptyLines := terminalHeight - contentHeight - footerHeight
-    if emptyLines < 0 {
-        emptyLines = 0
-    }
-
-    // Endgültige Ausgabe
-    return lipgloss.NewStyle().
-        Width(terminalWidth).
-        Height(terminalHeight).
-        Render(fmt.Sprintf("%s%s\n%s", content.String(), repeatNewline(emptyLines), footer))
-}
-
-// commitInputViewStatus
-func (m model) commitInputViewStatus() string {
+// taskStatusView
+func (m model) taskStatusView() string {
     var statuses = []string{"done", "wa", "staging"}
 	var content strings.Builder
 	content.Grow(256)

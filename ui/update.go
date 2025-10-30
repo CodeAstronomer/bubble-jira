@@ -3,11 +3,7 @@ package ui
 import (
 	"bubble-jira/jira"
     "fmt"
-    "log"
-    "strings"
     "time"
-    "os"
-    "path/filepath"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/progress"
@@ -15,6 +11,7 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/glamour"
+    "github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -323,51 +320,14 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
             return m, nil
 
         case msg.String() == keyEnter:
-            row := m.tasksTable.SelectedRow()
-            if len(row) == 0 {
-                return m, nil
-            }
+        	row := m.tasksTable.SelectedRow()
+        	if len(row) == 0 {
+        		return m, nil
+        	}
 
-            if m.hoverTimer != nil {
-                m.hoverTimer.Stop()
-                m.hoverTimer = nil
-            }
+        	key := row[0]
 
-            key := row[0]
-            title := row[1]
-
-            if _, err := os.Stat(filepath.Join(m.workDir, ".git")); os.IsNotExist(err) {
-                fmt.Println("\nNo Git repository found. Please initialize or clone a repo first.")
-                m.statusMessage = "No Git repository found. Please initialize or clone a repo first."
-                return m, nil
-            }
-
-            if !checkGitChanges(m.workDir) {
-                fmt.Println("\nNo changes to commit.")
-                fmt.Println(m.workDir)
-                m.statusMessage = "No changes to commit."
-                return m, nil
-            }
-
-            // Log vor Commit-Input
-            log.Println("Preparing git commit for issue:", key, "with default title:", title)
-
-            // Commit-Input initialisieren (Input wird in der View gehandhabt)
-            m.commitInput = struct {
-                input     textinput.Model
-                focusSave bool
-                key       string
-                title     string
-            }{
-                input:     textinput.New(),
-                focusSave: false,
-                key:       key,
-                title:     title,
-            }
-            m.commitInput.input.Placeholder = ""
-            m.commitInput.input.Focus()
-
-            // Initialize jiraStatusInput with only the key
+        	// Initialize jiraStatusInput with only the key
             m.jiraStatusInput = struct {
                 key      string
                 input    textinput.Model
@@ -378,8 +338,20 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
                 key: key,
             }
 
-            m.state = "commit-input"
-            return m, nil
+        	// Create task settings menu
+        	taskSettingsItems := []list.Item{
+            	menuItem{title: jira.SetState, enabled: true},
+            	menuItem{title: jira.CopyTitle, enabled: true},
+            	menuItem{title: jira.Back, enabled: true},
+            }
+
+            m.taskSettings = list.New(taskSettingsItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
+            m.taskSettings.Title = fmt.Sprintf("Task: %s", key)
+            m.taskSettings.SetShowHelp(true)
+            m.taskSettings.SetShowPagination(false)
+            m.state = "task-settings-list"
+
+        	return m, nil
         }
     }
 
@@ -649,80 +621,55 @@ func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// updateCommitInputGit handles git commit message editing UI
-func (m model) updateCommitInputGit(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
-    case tea.KeyMsg:
-        switch {
-        case msg.String() == keyDown:
-            m.commitInput.focusSave = !m.commitInput.focusSave
-            if m.commitInput.focusSave {
-                m.commitInput.input.Blur()
-                m.commitInput.input.PromptStyle = noStyle
-                m.commitInput.input.TextStyle = noStyle
-            } else {
-                m.commitInput.input.Focus()
-                m.commitInput.input.PromptStyle = focusedStyle
-                m.commitInput.input.TextStyle = focusedStyle
-            }
-            return m, nil
+// updateSettings handles settings state updates
+func (m model) updateTaskSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	m.taskSettings, cmd = m.taskSettings.Update(msg)
 
-        case msg.String() == keyUp:
-            if m.commitInput.focusSave {
-                m.commitInput.focusSave = false
-                m.commitInput.input.Focus()
-                m.commitInput.input.PromptStyle = focusedStyle
-                m.commitInput.input.TextStyle = focusedStyle
-            }
-            return m, nil
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if msg.String() == keyEnter {
+			selected := m.taskSettings.SelectedItem()
+			if selected == nil {
+				return m, nil
+			}
 
-        case msg.String() == keyEnter:
-            if m.commitInput.focusSave {
-                commitMsg := strings.TrimSpace(m.commitInput.input.Value())
-                if commitMsg == "" {
-                    commitMsg = m.commitInput.title
+			menuItemSelected := selected.(menuItem)
+
+			switch menuItemSelected.title {
+			case jira.SetState:
+				m.state = "task-status"
+				return m, nil
+
+			case jira.CopyTitle:
+                if m.jiraStatusInput.key != "" {
+                    // Copy the task key to clipboard
+                    err := clipboard.WriteAll("["+m.jiraStatusInput.key+"]")
+                    if err == nil {
+                        m.statusMessage = "Task key copied to clipboard!"
+                        fmt.Printf("Task key copied to clipboard!")
+                    } else {
+                        m.statusMessage = "Failed to copy task key!"
+                        fmt.Printf("Task key copied to clipboard!")
+                    }
                 }
+                return m, nil
 
-                var fullMsg string
-                if keyLeft {
-                    fullMsg = fmt.Sprintf("[" + m.commitInput.key + "]", commitMsg)
-                } else {
-                    fullMsg = fmt.Sprintf(commitMsg, "[" + m.commitInput.key + "]")
-                }
+			case jira.Back:
+				m.state = "tasks"
+				return m, nil
+			}
+		} else if contains(exitKeys, msg.String()) {
+			m.state = "tasks"
+			return m, nil
+		}
+	}
 
-                if err := runGitCommitAndPush(fullMsg); err != nil {
-                    m.statusMessage = fmt.Sprintf("Git error: %v", err)
-                    log.Println("Git push failed:", err)
-                    fmt.Printf("\nThis window will close in %d seconds.\n", closeAfterSec)
-                    return m, tea.Tick(time.Duration(closeAfterSec)*time.Second, func(time.Time) tea.Msg {
-                        return quitAfterDelayMsg{}
-                    })
-                }
-                log.Println("Committed and pushed:", fullMsg)
-            }
-            m.state = "commit-input-status"
-            return m, nil
-
-        case contains(exitKeys, msg.String()):
-            m.state = "tasks"
-            return m, nil
-        }
-
-        if !m.commitInput.focusSave {
-            var cmd tea.Cmd
-            m.commitInput.input, cmd = m.commitInput.input.Update(msg)
-            return m, cmd
-        }
-
-    case quitAfterDelayMsg:
-        return m, tea.Quit
-    }
-
-    return m, nil
+	return m, cmd
 }
 
-// updateCommitInputStatus
-func (m model) updateCommitInputStatus(msg tea.Msg) (tea.Model, tea.Cmd) {
+// updateTaskStatus
+func (m model) updateTaskStatus(msg tea.Msg) (tea.Model, tea.Cmd) {
 	statuses := []string{"done", "wa", "staging"}
 
 	switch msg := msg.(type) {
@@ -759,7 +706,7 @@ func (m model) updateCommitInputStatus(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		default:
 			if contains(exitKeys, msg.String()) {
-				m.state = "tasks"
+				m.state = "task-settings-list"
 				return m, nil
 			}
 		}

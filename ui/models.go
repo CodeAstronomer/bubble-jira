@@ -26,6 +26,7 @@ type model struct {
 	settings         list.Model
 	tasksTable       table.Model
 	taskContextMenu  list.Model
+	taskSettings     list.Model
 	selectedIssue    *jira.Issue
 	configList       configListEditor
 	configInput      configInputEditor
@@ -47,7 +48,6 @@ type model struct {
     cachedComments   map[string][]jira.Comment
     fetchingComments bool
     statusMessage    string
-    workDir          string
     commitInput struct {
     	input     textinput.Model
         focusSave bool
@@ -190,10 +190,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateConfigList(msg)
 	case "config-edit":
 		return m.updateConfigEdit(msg)
-	case "commit-input":
-        return m.updateCommitInputGit(msg)
-	case "commit-input-status":
-        return m.updateCommitInputStatus(msg)
+	case "task-status":
+        return m.updateTaskStatus(msg)
+	case "task-settings-list":
+        return m.updateTaskSettings(msg)
 	default:
 		return m, nil
 	}
@@ -226,10 +226,10 @@ func (m model) View() string {
 		return configStyle.Render(m.configInputView())
 	case "fetching":
 		return fetchingStyle.Render(m.fetchingView())
-	case "commit-input":
-        return fetchingStyle.Render(m.commitInputViewGit())
-    case "commit-input-status":
-        return fetchingStyle.Render(m.commitInputViewStatus())
+    case "task-status":
+        return fetchingStyle.Render(m.taskStatusView())
+    case "task-settings-list":
+        return menuStyle.Render(m.taskSettings.View())
 	default:
 		return "Unknown state"
 	}

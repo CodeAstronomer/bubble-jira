@@ -10,4 +10,8 @@ const (
 	MenuKeybindingTitle   = "Keybinding"
 	MenuBackTitle         = "Back to Main Menu"
 	ContextViewComments   = "View Comments"
+    Back                  = "Back"
+
+	SetState              = "Edit Task Status"
+	CopyTitle             = "Copy Task Key"
 )
