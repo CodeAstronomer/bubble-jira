@@ -1,0 +1,40 @@
+{
+  "language": "Language",
+
+  "MenuViewTasksTitle": "View Tasks",
+  "MenuSettingsTitle": "Settings",
+  "MenuQuitTitle": "Quit",
+  "MenuConfigTitle": "Edit Configuration",
+  "MenuLicenceTitle": "View License",
+  "MenuBackTitle": "Back",
+  "ContextViewComments": "View Comments",
+  "MenuKeybindingTitle": "Keybindings",
+  "SetState": "Edit Task Status",
+  "CopyTitle": "Copy Task Key",
+
+  "SettingsTitle": "Settings",
+  "ConfigurationTitle": "Configuration",
+  "TaskTitle": "Task",
+  "menuTitle": "Menu",
+
+  "TaskListItemKey": "Key",
+  "TaskListItemTitle": "Title",
+  "TaskListItemStatus": "Status",
+
+  "Open": "Open",
+  "CurrentlyInProgress": "In Progress",
+  "Done": "Done",
+  "Reopened": "Reopened",
+  "Closed": "Closed",
+  "Backlog": "Backlog",
+  "QM": "QM",
+  "Waiting": "Waiting for ...",
+  "Staging": "Pending Approval in Staging",
+
+  "HelpHeader": "Help",
+  "HelpUsage": "Usage",
+  "HelpFlags": "Flags",
+  "HelpFlagHelp": "--help/-h Show this help",
+  "HelpFlagVersion": "-v Show version number",
+  "HelpFlagTasks": "-t Start directly in task list"
+}

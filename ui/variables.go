@@ -22,7 +22,7 @@ func getTerminalSize() (int, int) {
 // AppVersion stays constant
 const AppVersion = "1.0.0"
 
-var allowedLanguages = []string{"de-DE"}
+var allowedLanguages = []string{"de-DE", "en-EN"}
 
 // Strings holds all translated strings
 var Strings map[string]string

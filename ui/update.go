@@ -619,6 +619,9 @@ func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
                         return m, nil
                     }
 
+                    Lang = value
+                    loadStrings(Lang)
+
                     m.configValidError = ""
                 }
 
