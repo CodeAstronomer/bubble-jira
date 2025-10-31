@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"golang.org/x/term"
 	"bubble-jira/config"
@@ -15,6 +16,7 @@ func getTerminalSize() (int, int) {
 	width, height, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		width = 80
+		height = 24
 	}
 	return width, height
 }
@@ -43,6 +45,8 @@ var (
 	closeAfterSecGit    = 0
 	taskViewHeight      = 30
 	autoFetchTimeSec    = 3
+	keyLeft             = strings.TrimSpace(cfg.IssueKeyLoc)
+	keyWrapper          = strings.TrimSpace(cfg.IssueKeyExample)
 	exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter, keyNewComment = cfg.GetKeys()
 	keyMap              = map[string]string{
 		keyUp:       "↑",
@@ -51,6 +55,14 @@ var (
 		keyFastUp:   "pgUp",
 		keyEnter:    "⏎",
 	}
+    keyLeftRightMap      = map[string]string{
+        "1": "left",
+        "2": "right",
+    }
+    keyWrapperMap        = map[string]string{
+        "1": "[XXX-XXXX]",
+        "2": "(XXX-XXXX)",
+    }
 )
 
 // loadStrings loads the JSON translation file for the current language

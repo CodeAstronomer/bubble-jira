@@ -78,6 +78,8 @@ func newKeybindingEditor(cfg *config.Config) configListEditor {
 		{key: "Enter", value: cfg.Keys.Confirm},
 		{key: "Back/Cancel", value: exitKeysStr},
 		{key: "Add Comment", value: cfg.Keys.Comment},
+		{key: "Jira Issue Key for Git Location", value: keyLeftRightMap[cfg.IssueKeyLoc]},
+        {key: "Jira Issue Key for Git Style", value: keyWrapperMap[cfg.IssueKeyExample]},
 		{key: Strings["language"], value: cfg.Lang},
 	}
 

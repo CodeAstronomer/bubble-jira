@@ -904,7 +904,14 @@ func (m model) updateEnterCommitMessage(msg tea.Msg) (tea.Model, tea.Cmd) {
                     return m, nil
                 }
 
-                err := clipboard.WriteAll(`git commit -m "[` + m.jiraStatusInput.key + `] ` + text + `"`)
+                var command string
+                if keyLeftRightMap[keyLeft] == "right" {
+                    command = `git commit -m "`+ text + ` [` + m.jiraStatusInput.key + `]"`
+                } else {
+                    command = `git commit -m "[` + m.jiraStatusInput.key + `] ` + text + `"`
+                }
+
+                err := clipboard.WriteAll(command)
                 if err == nil {
                     m.statusMessage = "Commit command copied to clipboard!"
                     fmt.Printf("Commit command copied to clipboard!")

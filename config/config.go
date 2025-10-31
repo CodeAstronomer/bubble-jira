@@ -8,26 +8,26 @@ import (
 )
 
 type Keys struct {
-	Exit []string `json:"exit"`
-	Up   string `json:"up"`
-	Down string `json:"down"`
-    FastUp   string   `json:"fast_up"`
-    FastDown string   `json:"fast_down"`
-    Confirm  string   `json:"confirm"`
-    Comment string   `json:"comment"`
+	Exit     []string `json:"exit"`
+	Up       string   `json:"up"`
+	Down     string   `json:"down"`
+	FastUp   string   `json:"fast_up"`
+	FastDown string   `json:"fast_down"`
+	Confirm  string   `json:"confirm"`
+	Comment  string   `json:"comment"`
 }
 
-// Config holds Jira connection settings.
 type Config struct {
-	BaseURL  string `json:"base_url"`
-	Email    string `json:"email"`
-	APIToken string `json:"api_token"`
-	JQL      string `json:"jql"`
-	Keys     Keys   `json:"keys"`
-	Lang     string `json:"lang"`
+	BaseURL         string `json:"base_url"`
+	Email           string `json:"email"`
+	APIToken        string `json:"api_token"`
+	JQL             string `json:"jql"`
+	Keys            Keys   `json:"keys"`
+	Lang            string `json:"lang"`
+	IssueKeyLoc     string `json:"issue_key_loc"`
+	IssueKeyExample string `json:"issue_key_example"`
 }
 
-// DefaultConfig returns a sensible default.
 func DefaultConfig() *Config {
 	return &Config{
 		BaseURL:  "https://your-domain.atlassian.net",
@@ -35,19 +35,20 @@ func DefaultConfig() *Config {
 		APIToken: "your-atlassian-api-token",
 		JQL:      "assignee = currentuser() AND (status != Done AND status != Erledigt) ORDER BY updated DESC",
 		Keys: Keys{
-            Exit: []string{"q", "esc"},
-            Up:   "up",
-            Down: "down",
-            FastUp:   "pgup",
-            FastDown: "pgdown",
-            Confirm: "enter",
-            Comment: "n",
-        },
-        Lang: "de-DE",
+			Exit:     []string{"q", "esc"},
+			Up:       "up",
+			Down:     "down",
+			FastUp:   "pgup",
+			FastDown: "pgdown",
+			Confirm:  "enter",
+			Comment:  "n",
+		},
+		Lang:            "de-DE",
+		IssueKeyLoc:     "1",
+		IssueKeyExample: "1",
 	}
 }
 
-// ConfigFile returns the path to config.json
 func ConfigFile() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -60,7 +61,6 @@ func ConfigFile() (string, error) {
 	return p, nil
 }
 
-// Save writes the config to JSON
 func Save(cfg *Config) error {
 	p, err := ConfigFile()
 	if err != nil {
@@ -73,11 +73,10 @@ func Save(cfg *Config) error {
 	defer f.Close()
 
 	encoder := json.NewEncoder(f)
-	encoder.SetIndent("", "  ") // pretty print
+	encoder.SetIndent("", "  ")
 	return encoder.Encode(cfg)
 }
 
-// Load reads the config.json or creates default if missing
 func Load() (*Config, error) {
 	p, err := ConfigFile()
 	if err != nil {
@@ -104,20 +103,16 @@ func Load() (*Config, error) {
 	return &cfg, nil
 }
 
-// IsValid checks if the config has all required fields properly filled
 func (c *Config) IsValid() bool {
-	// Trim whitespace to avoid accidental spaces being considered valid
 	baseURL := strings.TrimSpace(c.BaseURL)
 	email := strings.TrimSpace(c.Email)
 	apiToken := strings.TrimSpace(c.APIToken)
 	jql := strings.TrimSpace(c.JQL)
 
-	// Check for missing required fields
 	if baseURL == "" || email == "" || apiToken == "" || jql == "" {
 		return false
 	}
 
-	// Check for default placeholder values
 	if baseURL == "https://your-domain.atlassian.net" ||
 		email == "you@example.com" ||
 		apiToken == "your-atlassian-api-token" {
@@ -128,15 +123,15 @@ func (c *Config) IsValid() bool {
 }
 
 func (c *Config) GetKeys() (exitKeys []string, exitKeysStr string, up string, down string, fastUp string, fastDown string, enter string, comment string) {
-    exitKeys = c.Keys.Exit
-    exitKeysStr = strings.Join(exitKeys, "/")
+	exitKeys = c.Keys.Exit
+	exitKeysStr = strings.Join(exitKeys, "/")
 
-    up = c.Keys.Up
-    down = c.Keys.Down
-    fastUp = c.Keys.FastUp
-    fastDown = c.Keys.FastDown
-    enter = c.Keys.Confirm
-    comment = c.Keys.Comment
+	up = c.Keys.Up
+	down = c.Keys.Down
+	fastUp = c.Keys.FastUp
+	fastDown = c.Keys.FastDown
+	enter = c.Keys.Confirm
+	comment = c.Keys.Comment
 
-    return
+	return
 }
