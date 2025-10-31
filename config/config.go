@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"strconv"
 )
 
 type Keys struct {
@@ -46,7 +45,7 @@ func DefaultConfig() *Config {
 		},
 		Lang:            "de-DE",
 		IssueKeyLoc:     "1",
-		IssueKeyStyle: "1",
+		IssueKeyStyle:   "1",
 	}
 }
 
@@ -135,12 +134,4 @@ func (c *Config) GetKeys() (exitKeys []string, exitKeysStr string, up string, do
 	comment = c.Keys.Comment
 
 	return
-}
-
-func saveChoice(field *string, choice int) {
-    *field = strconv.Itoa(choice + 1)
-    cfg, err := Load()
-    if err == nil {
-        Save(cfg)
-    }
 }

@@ -921,11 +921,22 @@ func (m model) updateEnterCommitMessage(msg tea.Msg) (tea.Model, tea.Cmd) {
                     return m, nil
                 }
 
+                var keyWrapperOpen string
+                var keyWrapperClose string
+
+                if keyWrapper == "1" {
+                    keyWrapperOpen = "["
+                    keyWrapperClose = "]"
+                } else {
+                    keyWrapperOpen = "("
+                    keyWrapperClose = ")"
+                }
+
                 var command string
                 if keyLeftRightMap[keyLeft] == "right" {
-                    command = `git commit -m "`+ text + ` [` + m.jiraStatusInput.key + `]"`
+                    command = `git commit -m "`+ text + ` ` + keyWrapperOpen + m.jiraStatusInput.key + keyWrapperClose +`"`
                 } else {
-                    command = `git commit -m "[` + m.jiraStatusInput.key + `] ` + text + `"`
+                    command = `git commit -m "` + keyWrapperOpen + m.jiraStatusInput.key + keyWrapperClose +` ` + text + `"`
                 }
 
                 err := clipboard.WriteAll(command)
