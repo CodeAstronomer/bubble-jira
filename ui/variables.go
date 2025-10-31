@@ -47,22 +47,12 @@ var (
 	autoFetchTimeSec    = 3
 	keyLeft             = strings.TrimSpace(cfg.IssueKeyLoc)
 	keyWrapper          = strings.TrimSpace(cfg.IssueKeyExample)
+	style1              = "[XXX-XXXX]"
+	style2              = "(XXX-XXXX)"
 	exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter, keyNewComment = cfg.GetKeys()
-	keyMap              = map[string]string{
-		keyUp:       "↑",
-		keyDown:     "↓",
-		keyFastDown: "pgDown",
-		keyFastUp:   "pgUp",
-		keyEnter:    "⏎",
-	}
-    keyLeftRightMap      = map[string]string{
-        "1": "left",
-        "2": "right",
-    }
-    keyWrapperMap        = map[string]string{
-        "1": "[XXX-XXXX]",
-        "2": "(XXX-XXXX)",
-    }
+	keyMap map[string]string
+    keyLeftRightMap map[string]string
+    keyWrapperMap map[string]string
 )
 
 // loadStrings loads the JSON translation file for the current language
@@ -98,4 +88,22 @@ func Init() {
 		Strings["Waiting"]:             81,
 		Strings["Staging"]:             91,
 	}
+
+    keyMap = map[string]string{
+        keyUp:       "↑",
+        keyDown:     "↓",
+        keyFastDown: "pgDown",
+        keyFastUp:   "pgUp",
+        keyEnter:    "⏎",
+    }
+
+    keyLeftRightMap = map[string]string{
+        "1": Strings["left"],
+        "2": Strings["right"],
+    }
+
+    keyWrapperMap = map[string]string{
+        "1": style1,
+        "2": style2,
+    }
 }

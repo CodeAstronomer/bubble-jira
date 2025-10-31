@@ -35,6 +35,9 @@
   "Waiting": "Warten auf ...",
   "Staging": "Zur Abnahme im Staging",
 
+  "left": "Links",
+  "right": "Rechts",
+
   "HelpHeader": "Hilfe",
   "HelpUsage": "Verwendung",
   "HelpFlags": "Flags",

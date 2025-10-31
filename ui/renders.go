@@ -271,3 +271,89 @@ func (m model) enterCommitMessage() string {
         Height(terminalHeight).
         Render(content.String() + repeatNewline(emptyLines) + "\n" + footer)
 }
+
+func (m model) issueGitLocation() string {
+    var pos = []string{
+    	Strings["left"],
+    	Strings["right"],
+    }
+	var content strings.Builder
+	content.Grow(256)
+
+	content.WriteString("Choose Jira Issue Key Git Location\n\n")
+	content.WriteString("\n\nSelect Location:\n")
+
+	for i, position := range pos {
+		if m.gitIssueLoc.cursor == i {
+			content.WriteString("(•) ")
+		} else {
+			content.WriteString("( ) ")
+		}
+		content.WriteString(position)
+		content.WriteString("\n")
+	}
+
+    // Footer
+    footer := lipgloss.NewStyle().Faint(true).Render(
+        keyMap[keyUp]+"/"+keyMap[keyDown]+": navigate • "+
+            keyMap[keyEnter]+": confirm • "+
+            keyExitKeysStr+": cancel",
+    )
+
+    // Dynamisch leere Zeilen berechnen, um Footer nach unten zu schieben
+    contentHeight := lipgloss.Height(content.String())
+    footerHeight := lipgloss.Height(footer)
+    emptyLines := terminalHeight - contentHeight - footerHeight
+    if emptyLines < 0 {
+        emptyLines = 0
+    }
+
+    // Endgültige Ausgabe
+    return lipgloss.NewStyle().
+        Width(terminalWidth).
+        Height(terminalHeight).
+        Render(fmt.Sprintf("%s%s\n%s", content.String(), repeatNewline(emptyLines), footer))
+}
+
+func (m model) issueGitStyle() string {
+    var pos = []string{
+    	style1,
+    	style2,
+    }
+	var content strings.Builder
+	content.Grow(256)
+
+	content.WriteString("Choose Jira Issue Key Git Style\n\n")
+	content.WriteString("\n\nSelect Style:\n")
+
+	for i, position := range pos {
+		if m.gitIssueStyle.cursor == i {
+			content.WriteString("(•) ")
+		} else {
+			content.WriteString("( ) ")
+		}
+		content.WriteString(position)
+		content.WriteString("\n")
+	}
+
+    // Footer
+    footer := lipgloss.NewStyle().Faint(true).Render(
+        keyMap[keyUp]+"/"+keyMap[keyDown]+": navigate • "+
+            keyMap[keyEnter]+": confirm • "+
+            keyExitKeysStr+": cancel",
+    )
+
+    // Dynamisch leere Zeilen berechnen, um Footer nach unten zu schieben
+    contentHeight := lipgloss.Height(content.String())
+    footerHeight := lipgloss.Height(footer)
+    emptyLines := terminalHeight - contentHeight - footerHeight
+    if emptyLines < 0 {
+        emptyLines = 0
+    }
+
+    // Endgültige Ausgabe
+    return lipgloss.NewStyle().
+        Width(terminalWidth).
+        Height(terminalHeight).
+        Render(fmt.Sprintf("%s%s\n%s", content.String(), repeatNewline(emptyLines), footer))
+}

@@ -73,6 +73,18 @@ type model struct {
         focusSend bool
         issueKey  string
     }
+    gitIssueLoc struct {
+        input    textinput.Model
+        focusSave bool
+        cursor   int
+        choice   string
+    }
+    gitIssueStyle struct {
+        input    textinput.Model
+        focusSave bool
+        cursor   int
+        choice   string
+    }
 }
 
 // fetchingModel represents the fetching state UI
@@ -215,6 +227,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         return m.updateAddCommentInput(msg)
     case "enter-commit-message":
         return m.updateEnterCommitMessage(msg)
+    case "issue-git-location":
+        return m.updateIssueGitLocation(msg)
+    case "issue-git-style":
+        return m.updateIssueGitLocation(msg)
 	default:
 		return m, nil
 	}
@@ -255,6 +271,10 @@ func (m model) View() string {
         return m.addCommentView()
     case "enter-commit-message":
         return m.enterCommitMessage()
+    case "issue-git-location":
+        return m.issueGitLocation()
+    case "issue-git-style":
+        return m.issueGitStyle()
 	default:
 		return "Unknown state"
 	}

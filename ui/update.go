@@ -6,6 +6,7 @@ import (
     "fmt"
     "time"
     "regexp"
+    "strconv"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/progress"
@@ -82,6 +83,9 @@ func (m model) updateMenu(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // updateSettings handles settings state updates
 func (m model) updateSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
+    // Initialize git inputs so they are never nil
+    m.initGitInputs()
+
 	var cmd tea.Cmd
 	m.settings, cmd = m.settings.Update(msg)
 
@@ -608,11 +612,24 @@ func (m model) updateConfigList(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch {
 		case msg.String() == keyEnter:
-			m.editingFieldIdx = m.configList.list.Index()
-			field := m.configList.fields[m.editingFieldIdx]
-			m.configInput = newConfigInputEditor(field.key, field.value)
-			m.state = "config-edit"
-			return m, nil
+            m.editingFieldIdx = m.configList.list.Index()
+            field := m.configList.fields[m.editingFieldIdx]
+
+            // Handle Jira Issue Key selections
+            switch field.key {
+            case "Jira Issue Key for Git Location":
+                m.state = "issue-git-location"
+                m.gitIssueLoc.cursor = 0 // default selection
+                return m, nil
+            case "Jira Issue Key for Git Style":
+                m.state = "issue-git-style"
+                m.gitIssueStyle.cursor = 0 // default selection
+                return m, nil
+            default:
+                m.configInput = newConfigInputEditor(field.key, field.value)
+                m.state = "config-edit"
+                return m, nil
+            }
 
 		case contains(exitKeys, msg.String()):
             m.state = "settings"
@@ -695,14 +712,14 @@ func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
                     m.configValidError = ""
                 }
 
-                m.configList.fields[m.editingFieldIdx].value = value
-                m.updateConfigFields()
-
                 if m.editingMode == "keybindings" {
                     m.configList = newKeybindingEditor(m.cfg)
                 } else {
                     m.configList = newConfigListEditor(m.cfg)
                 }
+
+                m.configList.fields[m.editingFieldIdx].value = value
+                m.updateConfigFields()
                 m.state = "config"
                 return m, nil
             }
@@ -960,4 +977,124 @@ func (m model) updateEnterCommitMessage(msg tea.Msg) (tea.Model, tea.Cmd) {
     }
 
     return m, nil
+}
+
+func (m *model) initGitInputs() {
+    if m.gitIssueLoc.input.Placeholder == "" {
+        m.gitIssueLoc.input = textinput.New()
+        m.gitIssueLoc.input.Placeholder = "Enter Git issue location..."
+        m.gitIssueLoc.cursor = 0
+        m.gitIssueLoc.choice = ""
+        m.gitIssueLoc.focusSave = false
+    }
+
+    if m.gitIssueStyle.input.Placeholder == "" {
+        m.gitIssueStyle.input = textinput.New()
+        m.gitIssueStyle.input.Placeholder = "Enter Git issue style..."
+        m.gitIssueStyle.cursor = 0
+        m.gitIssueStyle.choice = ""
+        m.gitIssueStyle.focusSave = false
+    }
+}
+
+func (m model) updateIssueGitLocation(msg tea.Msg) (tea.Model, tea.Cmd) {
+	pos := []string{
+    	Strings["left"],
+    	Strings["right"],
+    }
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch {
+		case msg.String() == keyDown:
+			if !m.gitIssueLoc.focusSave {
+				m.gitIssueLoc.cursor++
+				if m.gitIssueLoc.cursor >= len(pos) {
+					m.gitIssueLoc.cursor = 0
+				}
+			} else {
+				m.gitIssueLoc.focusSave = false
+			}
+			return m, nil
+
+		case msg.String() == keyUp:
+			if !m.gitIssueLoc.focusSave {
+				m.gitIssueLoc.cursor--
+				if m.gitIssueLoc.cursor < 0 {
+					m.gitIssueLoc.cursor = len(pos) - 1
+				}
+			} else {
+				m.gitIssueLoc.focusSave = false
+			}
+			return m, nil
+
+		case msg.String() == keyEnter:
+			// Speichere Auswahl in Config
+			m.gitIssueLoc.choice = strconv.Itoa(m.gitIssueLoc.cursor + 1)
+			m.cfg.IssueKeyLoc = m.gitIssueLoc.choice
+
+			// Config speichern
+			if err := config.Save(m.cfg); err != nil {
+				m.statusMessage = "Failed to save config!"
+				fmt.Printf("Failed to save config: %v\n", err)
+				return m, nil
+			}
+
+			m.state = "config"
+            return m, nil
+
+		default:
+			if contains(exitKeys, msg.String()) {
+				m.state = "config"
+				return m, nil
+			}
+		}
+    }
+	return m, nil
+}
+
+func (m model) updateIssueGitStyle(msg tea.Msg) (tea.Model, tea.Cmd) {
+	pos := []string{
+    	style1,
+    	style2,
+    }
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch {
+		case msg.String() == keyDown:
+			if !m.gitIssueStyle.focusSave {
+				m.gitIssueStyle.cursor++
+				if m.gitIssueStyle.cursor >= len(pos) {
+					m.gitIssueStyle.cursor = 0
+				}
+			} else {
+				m.gitIssueStyle.focusSave = false
+			}
+			return m, nil
+
+		case msg.String() == keyUp:
+			if !m.gitIssueStyle.focusSave {
+				m.gitIssueStyle.cursor--
+				if m.gitIssueStyle.cursor < 0 {
+					m.gitIssueStyle.cursor = len(pos) - 1
+				}
+			} else {
+				m.gitIssueStyle.focusSave = false
+			}
+			return m, nil
+
+		case msg.String() == keyEnter:
+			m.gitIssueStyle.choice = strconv.Itoa(m.gitIssueStyle.cursor + 1)
+			m.state = "config"
+            return m, nil
+
+		default:
+			if contains(exitKeys, msg.String()) {
+				m.state = "config"
+				return m, nil
+			}
+		}
+    }
+	return m, nil
 }

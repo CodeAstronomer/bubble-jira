@@ -35,6 +35,9 @@
   "Waiting": "Waiting for ...",
   "Staging": "Pending Approval in Staging",
 
+  "left": "Left",
+  "right": "Right",
+
   "HelpHeader": "Help",
   "HelpUsage": "Usage",
   "HelpFlags": "Flags",
