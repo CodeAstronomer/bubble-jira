@@ -11,6 +11,7 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
+	"github.com/charmbracelet/lipgloss"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -141,7 +142,12 @@ func newModel(cfg *config.Config, jc *jira.Client) model {
 	menu.SetShowHelp(true)
 	menu.SetShowPagination(false)
 
-	vp := viewport.New(200, 50)
+
+    footer := lipgloss.NewStyle().
+        Faint(true).
+        Render(keyMap[keyUp] + "/" + keyMap[keyDown] + ": scroll • " + keyNewComment + ": Add Comment • " + keyExitKeysStr + ": back")
+    footerHeight := lipgloss.Height(footer)
+	vp := viewport.New(terminalWidth, terminalHeight-footerHeight)
 	vp.Style = commentsStyle
 
 	return model{
