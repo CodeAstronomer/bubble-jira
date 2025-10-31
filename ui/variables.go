@@ -46,7 +46,7 @@ var (
 	taskViewHeight      = 30
 	autoFetchTimeSec    = 3
 	keyLeft             = strings.TrimSpace(cfg.IssueKeyLoc)
-	keyWrapper          = strings.TrimSpace(cfg.IssueKeyExample)
+	keyWrapper          = strings.TrimSpace(cfg.IssueKeyStyle)
 	style1              = "[XXX-XXXX]"
 	style2              = "(XXX-XXXX)"
 	exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter, keyNewComment = cfg.GetKeys()

@@ -316,7 +316,7 @@ func (m model) issueGitLocation() string {
 }
 
 func (m model) issueGitStyle() string {
-    var pos = []string{
+    var styles = []string{
     	style1,
     	style2,
     }
@@ -326,13 +326,13 @@ func (m model) issueGitStyle() string {
 	content.WriteString("Choose Jira Issue Key Git Style\n\n")
 	content.WriteString("\n\nSelect Style:\n")
 
-	for i, position := range pos {
+	for i, style := range styles {
 		if m.gitIssueStyle.cursor == i {
 			content.WriteString("(•) ")
 		} else {
 			content.WriteString("( ) ")
 		}
-		content.WriteString(position)
+		content.WriteString(style)
 		content.WriteString("\n")
 	}
 

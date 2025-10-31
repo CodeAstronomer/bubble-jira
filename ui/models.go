@@ -230,7 +230,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     case "issue-git-location":
         return m.updateIssueGitLocation(msg)
     case "issue-git-style":
-        return m.updateIssueGitLocation(msg)
+        return m.updateIssueGitStyle(msg)
 	default:
 		return m, nil
 	}

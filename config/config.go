@@ -26,7 +26,7 @@ type Config struct {
 	Keys            Keys   `json:"keys"`
 	Lang            string `json:"lang"`
 	IssueKeyLoc     string `json:"issue_key_loc"`
-	IssueKeyExample string `json:"issue_key_example"`
+	IssueKeyStyle string `json:"issue_key_style"`
 }
 
 func DefaultConfig() *Config {
@@ -46,7 +46,7 @@ func DefaultConfig() *Config {
 		},
 		Lang:            "de-DE",
 		IssueKeyLoc:     "1",
-		IssueKeyExample: "1",
+		IssueKeyStyle: "1",
 	}
 }
 

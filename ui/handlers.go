@@ -46,7 +46,7 @@ func newConfigListEditor(cfg *config.Config) configListEditor {
 		{key: "API Token", value: cfg.APIToken},
 		{key: "JQL Query", value: cfg.JQL},
 		{key: "Jira Issue Key for Git Location", value: keyLeftRightMap[cfg.IssueKeyLoc]},
-        {key: "Jira Issue Key for Git Style", value: keyWrapperMap[cfg.IssueKeyExample]},
+        {key: "Jira Issue Key for Git Style", value: keyWrapperMap[cfg.IssueKeyStyle]},
 		{key: Strings["language"], value: cfg.Lang},
 	}
 

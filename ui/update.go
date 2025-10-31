@@ -1029,11 +1029,9 @@ func (m model) updateIssueGitLocation(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case msg.String() == keyEnter:
-			// Speichere Auswahl in Config
 			m.gitIssueLoc.choice = strconv.Itoa(m.gitIssueLoc.cursor + 1)
 			m.cfg.IssueKeyLoc = m.gitIssueLoc.choice
 
-			// Config speichern
 			if err := config.Save(m.cfg); err != nil {
 				m.statusMessage = "Failed to save config!"
 				fmt.Printf("Failed to save config: %v\n", err)
@@ -1085,8 +1083,16 @@ func (m model) updateIssueGitStyle(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case msg.String() == keyEnter:
-			m.gitIssueStyle.choice = strconv.Itoa(m.gitIssueStyle.cursor + 1)
-			m.state = "config"
+            m.gitIssueStyle.choice = strconv.Itoa(m.gitIssueStyle.cursor + 1)
+            m.cfg.IssueKeyStyle = m.gitIssueStyle.choice
+
+            if err := config.Save(m.cfg); err != nil {
+                m.statusMessage = "Failed to save config!"
+                fmt.Printf("Failed to save config: %v\n", err)
+                return m, nil
+            }
+
+            m.state = "config"
             return m, nil
 
 		default:
