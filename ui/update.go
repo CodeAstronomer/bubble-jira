@@ -664,7 +664,7 @@ func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
             if m.configInput.focusSave {
                 value := m.configInput.input.Value()
 
-                if m.editingMode == "keybindings" && m.configInput.key == Strings["language"] {
+                if m.editingMode == "config" && m.configInput.key == Strings["language"] {
                     if !languageRegex.MatchString(value) {
                         m.configInput.focusSave = true
                         return m, nil
