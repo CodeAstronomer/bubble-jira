@@ -1,6 +1,9 @@
 package ui
 
 import (
+    "fmt"
+    "os"
+
 	"bubble-jira/jira"
 	"bubble-jira/config"
 
@@ -30,6 +33,12 @@ func (pr *Program) Quit() {
 }
 
 func (pr *Program) StartWithTasks(cfg *config.Config, jc *jira.Client) error {
+    // Check config validity first
+    if !cfg.IsValid() {
+        fmt.Fprintln(os.Stdout, "⚠ Config incomplete! Please fill all fields in Settings > Edit Config first.")
+        os.Exit(1)
+    }
+
 	// Create model in fetching state
 	m := newModel(cfg, jc)
 	m.state = "fetching"

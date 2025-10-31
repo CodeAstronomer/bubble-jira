@@ -106,11 +106,21 @@ func Load() (*Config, error) {
 
 // IsValid checks if the config has all required fields properly filled
 func (c *Config) IsValid() bool {
-	if c.BaseURL == "" || c.Email == "" || c.APIToken == "" || c.JQL == "" {
+	// Trim whitespace to avoid accidental spaces being considered valid
+	baseURL := strings.TrimSpace(c.BaseURL)
+	email := strings.TrimSpace(c.Email)
+	apiToken := strings.TrimSpace(c.APIToken)
+	jql := strings.TrimSpace(c.JQL)
+
+	// Check for missing required fields
+	if baseURL == "" || email == "" || apiToken == "" || jql == "" {
 		return false
 	}
 
-	if c.BaseURL == "https://your-domain.atlassian.net" && c.Email == "you@example.com" && c.APIToken == "your-atlassian-api-token" {
+	// Check for default placeholder values
+	if baseURL == "https://your-domain.atlassian.net" ||
+		email == "you@example.com" ||
+		apiToken == "your-atlassian-api-token" {
 		return false
 	}
 

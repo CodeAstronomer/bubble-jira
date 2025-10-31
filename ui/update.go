@@ -46,6 +46,11 @@ func (m model) updateMenu(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			switch menuItemSelected.title {
 			case Strings["MenuViewTasksTitle"]:
+                // Nur starten, wenn Config gültig ist
+                if !m.cfg.IsValid() {
+                    m.configValidError = "⚠ Config incomplete! Please fill all fields in Settings > Edit Config first."
+                    return m, nil
+                }
 				m.state = "fetching"
 				m.fetching = newFetchingModel()
 				m.configValidError = ""
@@ -107,6 +112,19 @@ func (m model) updateSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		} else if contains(exitKeys, msg.String()) {
 			m.state = "menu"
+
+			config.Load()
+
+			// Rebuild the menu to reflect enabled/disabled items
+            menuItems := []list.Item{
+                menuItem{title: Strings["MenuViewTasksTitle"], enabled: m.cfg.IsValid()},
+                menuItem{title: Strings["MenuSettingsTitle"], enabled: true},
+                menuItem{title: Strings["MenuQuitTitle"], enabled: true},
+            }
+            m.menu = list.New(menuItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
+            m.menu.Title = Strings["menuTitle"]
+            m.menu.SetShowHelp(true)
+            m.menu.SetShowPagination(false)
 			return m, nil
 		}
 	}
