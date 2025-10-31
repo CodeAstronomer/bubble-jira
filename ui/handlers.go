@@ -77,6 +77,7 @@ func newKeybindingEditor(cfg *config.Config) configListEditor {
 		{key: "KeyFastDown", value: cfg.Keys.FastDown},
 		{key: "Enter", value: cfg.Keys.Confirm},
 		{key: "Back/Cancel", value: exitKeysStr},
+		{key: "Add Comment", value: cfg.Keys.Comment},
 		{key: Strings["language"], value: cfg.Lang},
 	}
 
