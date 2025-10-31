@@ -348,6 +348,7 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
         	}
 
         	key := row[0]
+        	title := row[1]
 
         	// Initialize jiraStatusInput with only the key
             m.jiraStatusInput = struct {
@@ -364,11 +365,12 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
         	taskSettingsItems := []list.Item{
             	menuItem{title: Strings["SetState"], enabled: true},
             	menuItem{title: Strings["CopyTitle"], enabled: true},
+            	menuItem{title: Strings["enterCommitMessage"], enabled: true},
             	menuItem{title: Strings["MenuBackTitle"], enabled: true},
             }
 
             m.taskSettings = list.New(taskSettingsItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
-            m.taskSettings.Title = fmt.Sprintf(Strings["TaskTitle"] + ": %s", key)
+            m.taskSettings.Title = fmt.Sprintf(Strings["TaskTitle"] + ": %s - %s", key, title)
             m.taskSettings.SetShowHelp(true)
             m.taskSettings.SetShowPagination(false)
             m.state = "task-settings-list"
@@ -742,6 +744,10 @@ func (m model) updateTaskSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
                 }
                 return m, nil
 
+			case Strings["enterCommitMessage"]:
+				m.state = "tasks"
+				return m, nil
+
 			case Strings["MenuBackTitle"]:
 				m.state = "tasks"
 				return m, nil
@@ -759,12 +765,12 @@ func (m model) updateTaskSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) updateTaskStatus(msg tea.Msg) (tea.Model, tea.Cmd) {
 	statuses := []string{
     	Strings["Open"],
-    	Strings["CurrentlyInProgress"],
-    	Strings["Done"],
-    	Strings["Reopened"],
-    	Strings["Closed"],
     	Strings["Backlog"],
+    	Strings["Reopened"],
+    	Strings["CurrentlyInProgress"],
     	Strings["QM"],
+    	Strings["Done"],
+    	Strings["Closed"],
     	Strings["Waiting"],
     	Strings["Staging"],
     }

@@ -9,8 +9,10 @@
   "MenuBackTitle": "Zurück",
   "ContextViewComments": "Kommentare anzeigen",
   "MenuKeybindingTitle": "Tastaturbelegung",
+
   "SetState": "Task status bearbeiten",
   "CopyTitle": "Task Key kopieren",
+  "enterCommitMessage": "Commit Message eingeben",
 
   "noComments": "Keine Kommentare gefunden",
 
