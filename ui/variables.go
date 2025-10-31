@@ -24,14 +24,6 @@ func getTerminalSize() (int, int) {
 // AppVersion stays constant
 const AppVersion = "1.0.0"
 
-var allowedLanguages = []string{"de-DE", "en-EN"}
-
-// Strings holds all translated strings
-var Strings map[string]string
-
-// JiraStatusMap maps status strings to IDs
-var JiraStatusMap map[string]int
-
 // Initialize everything that depends on terminal size
 var (
 	cfg, _              = config.Load()
@@ -49,10 +41,14 @@ var (
 	keyWrapper          = strings.TrimSpace(cfg.IssueKeyStyle)
 	style1              = "[XXX-XXXX]"
 	style2              = "(XXX-XXXX)"
+	allowedLanguages = []string{"de-DE", "en-EN"}
+
 	exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter, keyNewComment = cfg.GetKeys()
+    Strings map[string]string
 	keyMap map[string]string
     keyLeftRightMap map[string]string
     keyWrapperMap map[string]string
+    JiraStatusMap map[string]int
 )
 
 // loadStrings loads the JSON translation file for the current language
