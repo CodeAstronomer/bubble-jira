@@ -361,11 +361,27 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
                 key: key,
             }
 
+            ti := textinput.New()
+            ti.Placeholder = "Write your Commit message..."
+            ti.Focus()
+            ti.CharLimit = 1000
+            ti.Width = terminalWidth - 10
+
+            m.commitGitMessage = struct {
+                input     textinput.Model
+                focusSend bool
+                issueKey  string
+            }{
+                input:     ti,
+                focusSend: false,
+                issueKey:  key,
+            }
+
         	// Create task settings menu
         	taskSettingsItems := []list.Item{
             	menuItem{title: Strings["SetState"], enabled: true},
-            	menuItem{title: Strings["CopyTitle"], enabled: true},
             	menuItem{title: Strings["enterCommitMessage"], enabled: true},
+            	menuItem{title: Strings["CopyTitle"], enabled: true},
             	menuItem{title: Strings["MenuBackTitle"], enabled: true},
             }
 
@@ -745,7 +761,7 @@ func (m model) updateTaskSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
                 return m, nil
 
 			case Strings["enterCommitMessage"]:
-				m.state = "tasks"
+				m.state = "enter-commit-message"
 				return m, nil
 
 			case Strings["MenuBackTitle"]:
@@ -777,8 +793,8 @@ func (m model) updateTaskStatus(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case keyDown:
+		switch {
+		case msg.String() == keyDown:
 			if !m.jiraStatusInput.focusSave {
 				m.jiraStatusInput.cursor++
 				if m.jiraStatusInput.cursor >= len(statuses) {
@@ -789,7 +805,7 @@ func (m model) updateTaskStatus(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
-		case keyUp:
+		case msg.String() == keyUp:
 			if !m.jiraStatusInput.focusSave {
 				m.jiraStatusInput.cursor--
 				if m.jiraStatusInput.cursor < 0 {
@@ -800,7 +816,7 @@ func (m model) updateTaskStatus(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
-		case keyEnter:
+		case msg.String() == keyEnter:
 			selectedStatus := statuses[m.jiraStatusInput.cursor]
 			m.jiraStatusInput.choice = selectedStatus
 			m.state = "comments-fetching"
@@ -824,8 +840,8 @@ func (m model) updateTaskStatus(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) updateAddCommentInput(msg tea.Msg) (tea.Model, tea.Cmd) {
     switch msg := msg.(type) {
     case tea.KeyMsg:
-        switch msg.String() {
-        case keyEnter:
+        switch {
+        case msg.String() == keyEnter:
             if m.addCommentInput.focusSend {
                 text := m.addCommentInput.input.Value()
                 if len(text) == 0 || len(text) > 1000 {
@@ -847,7 +863,7 @@ func (m model) updateAddCommentInput(msg tea.Msg) (tea.Model, tea.Cmd) {
             }
             return m, nil
 
-        case keyUp, keyDown:
+        case msg.String() == keyUp || msg.String() == keyDown:
             m.addCommentInput.focusSend = !m.addCommentInput.focusSend
             if !m.addCommentInput.focusSend {
                 m.addCommentInput.input.Focus()
@@ -856,7 +872,7 @@ func (m model) updateAddCommentInput(msg tea.Msg) (tea.Model, tea.Cmd) {
             }
             return m, nil
 
-        case "esc":
+        case contains(exitKeys, msg.String()):
             m.state = "tasks"
             return m, nil
         }
@@ -870,6 +886,69 @@ func (m model) updateAddCommentInput(msg tea.Msg) (tea.Model, tea.Cmd) {
     if !m.addCommentInput.focusSend {
         var cmd tea.Cmd
         m.addCommentInput.input, cmd = m.addCommentInput.input.Update(msg)
+        return m, cmd
+    }
+
+    return m, nil
+}
+
+// updateEnterCommitMessage
+func (m model) updateEnterCommitMessage(msg tea.Msg) (tea.Model, tea.Cmd) {
+    switch msg := msg.(type) {
+    case tea.KeyMsg:
+        switch {
+        case msg.String() == keyEnter:
+            if m.commitGitMessage.focusSend {
+                text := m.commitGitMessage.input.Value()
+                if len(text) == 0 || len(text) > 1000 {
+                    return m, nil
+                }
+
+                err := clipboard.WriteAll(`git commit -m "[` + m.jiraStatusInput.key + `] ` + text + `"`)
+                if err == nil {
+                    m.statusMessage = "Commit command copied to clipboard!"
+                    fmt.Printf("Commit command copied to clipboard!")
+                } else {
+                    m.statusMessage = "Failed to copy Commit command!"
+                    fmt.Printf("Commit command copied to clipboard!")
+                }
+
+                return m, tea.Tick(time.Duration(closeAfterSecGit)*time.Second, func(time.Time) tea.Msg {
+                    return quitAfterDelayMsg{}
+                })
+            } else {
+                m.commitGitMessage.focusSend = true
+                m.commitGitMessage.input.Blur()
+            }
+            return m, nil
+
+        case msg.String() == keyUp || msg.String() == keyDown:
+            m.commitGitMessage.focusSend = !m.commitGitMessage.focusSend
+            if !m.commitGitMessage.focusSend {
+                m.commitGitMessage.input.Focus()
+            } else {
+                m.commitGitMessage.input.Blur()
+            }
+            return m, nil
+
+        case contains(exitKeys, msg.String()):
+            m.state = "task-settings-list"
+            return m, nil
+        }
+
+    case tea.WindowSizeMsg:
+        m.screenWidth = msg.Width
+        m.screenHeight = msg.Height
+        return m, nil
+
+    case quitAfterDelayMsg:
+        return m, tea.Quit
+    }
+
+    // Update text input if focused
+    if !m.commitGitMessage.focusSend {
+        var cmd tea.Cmd
+        m.commitGitMessage.input, cmd = m.commitGitMessage.input.Update(msg)
         return m, cmd
     }
 

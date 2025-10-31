@@ -220,9 +220,43 @@ func (m model) addCommentView() string {
     }
 
     // Footer
-    footer := lipgloss.NewStyle().Faint(true).Render(
-        "↑/↓: navigate • Enter: send • Esc: cancel",
-    )
+    parts := strings.Split(keyExitKeysStr, "/")
+    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": navigate • "+ keyMap[keyEnter] +": Send • "+ parts[1] +": cancel"))
+
+    // Dynamic padding
+    contentHeight := lipgloss.Height(content.String())
+    footerHeight := lipgloss.Height(footer)
+    emptyLines := terminalHeight - contentHeight - footerHeight
+    if emptyLines < 0 {
+        emptyLines = 0
+    }
+
+    return lipgloss.NewStyle().
+        Width(terminalWidth).
+        Height(terminalHeight).
+        Render(content.String() + repeatNewline(emptyLines) + "\n" + footer)
+}
+
+// EnterCommitMessage renders the Enter Commit Message view
+func (m model) enterCommitMessage() string {
+    var content strings.Builder
+    content.Grow(512)
+
+    content.WriteString("Add a Commit Message (max 1000 chars):\n")
+    content.WriteString("\n"+ lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("DO NOT Type [XXX-XXXX], it is already added to the final comment. \n"))
+    content.WriteString("\n" + m.commitGitMessage.input.View())
+    content.WriteString("\n\n")
+
+    // Render send button
+    if m.commitGitMessage.focusSend {
+        content.WriteString(focusedButtonGit)
+    } else {
+        content.WriteString(blurredButtonGit)
+    }
+
+    // Footer
+    parts := strings.Split(keyExitKeysStr, "/")
+    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": navigate • "+ keyMap[keyEnter] +": Copy Full Command • "+ parts[1] +": cancel"))
 
     // Dynamic padding
     contentHeight := lipgloss.Height(content.String())

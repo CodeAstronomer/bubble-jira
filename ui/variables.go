@@ -40,6 +40,7 @@ var (
 	terminalWidth       = width - (leftRightPadding * 2)
 	terminalHeight      = height - (topBottomPadding * 2)
 	closeAfterSec       = 2
+	closeAfterSecGit    = 0
 	taskViewHeight      = 30
 	autoFetchTimeSec    = 3
 	exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter, keyNewComment = cfg.GetKeys()

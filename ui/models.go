@@ -48,6 +48,7 @@ type model struct {
     cachedComments   map[string][]jira.Comment
     fetchingComments bool
     statusMessage    string
+    isFromAddComments bool
     commitInput struct {
     	input     textinput.Model
         focusSave bool
@@ -66,7 +67,11 @@ type model struct {
         focusSend bool
         issueKey  string
     }
-    isFromAddComments bool
+    commitGitMessage struct {
+        input     textinput.Model
+        focusSend bool
+        issueKey  string
+    }
 }
 
 // fetchingModel represents the fetching state UI
@@ -202,6 +207,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         return m.updateTaskSettings(msg)
     case "add-comment":
         return m.updateAddCommentInput(msg)
+    case "enter-commit-message":
+        return m.updateEnterCommitMessage(msg)
 	default:
 		return m, nil
 	}
@@ -240,6 +247,8 @@ func (m model) View() string {
         return menuStyle.Render(m.taskSettings.View())
     case "add-comment":
         return m.addCommentView()
+    case "enter-commit-message":
+        return m.enterCommitMessage()
 	default:
 		return "Unknown state"
 	}
