@@ -26,14 +26,14 @@ func newFetchingModel() fetchingModel {
 		spinner:      s,
 		progress:     p,
 		stages: []string{
-			"Connecting to Jira...",
-			"Authenticating...",
-			"Fetching comments...",
-			"Processing results...",
-			"Done",
+			Strings["FetchStage1"],
+			Strings["FetchStage2"],
+			Strings["FetchStage3"],
+			Strings["FetchStage4"],
+			Strings["FetchStage5"],
 		},
 		currentStage: 0,
-		status:       "Connecting to Jira...",
+		status: Strings["FetchStage1"],
 		width:        terminalWidth,
 	}
 }

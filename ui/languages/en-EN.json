@@ -60,5 +60,11 @@
   "SettingsKeyBindingKeyEnter": "Enter",
   "SettingsKeyBindingKeyBack": "Back",
   "SettingsKeyBindingComment": "Add Comments",
-  "SettingsKeyBindingSearch": "Search"
+  "SettingsKeyBindingSearch": "Search",
+
+  "FetchStage1": "Connecting to Jira...",
+  "FetchStage2": "Authenticating...",
+  "FetchStage3": "Fetching data...",
+  "FetchStage4": "Processing results...",
+  "FetchStage5": "Done"
 }
