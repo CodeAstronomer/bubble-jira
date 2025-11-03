@@ -627,11 +627,11 @@ func (m model) updateConfigList(msg tea.Msg) (tea.Model, tea.Cmd) {
 
             // Handle Jira Issue Key selections
             switch field.key {
-            case "Jira Issue Key for Git Location":
+            case "SettingsGitIssueKeyLocation":
                 m.state = "issue-git-location"
                 m.gitIssueLoc.cursor = 0 // default selection
                 return m, nil
-            case "Jira Issue Key for Git Style":
+            case "SettingsGitIssueKeyStyle":
                 m.state = "issue-git-style"
                 m.gitIssueStyle.cursor = 0 // default selection
                 return m, nil
