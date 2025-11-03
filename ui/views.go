@@ -93,7 +93,7 @@ func (m model) configInputView() string {
 	content.Grow(256) // Pre-allocate buffer
 	content.WriteString("Editing: ")
 	content.WriteString(m.configInput.key)
-	if m.configInput.key == Strings["language"] {
+	if m.configInput.key == "language" {
 	    content.WriteString("\n"+ lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("Only in this format: de-DE"))
 	    content.WriteString("\n"+ lipgloss.NewStyle().Render("You can choose between these languages: " + strings.Join(allowedLanguages, ", ")))
 	}

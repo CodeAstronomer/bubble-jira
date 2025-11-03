@@ -110,13 +110,14 @@ type configListEditor struct {
 
 // configField represents a configuration field
 type configField struct {
-	key   string
-	value string
+	key        string
+	displayKey string
+	value      string
 }
 
-func (cf configField) Title()       string { return cf.key }
+func (cf configField) Title()       string { return cf.displayKey }
 func (cf configField) Description() string { return cf.value }
-func (cf configField) FilterValue() string { return cf.key }
+func (cf configField) FilterValue() string { return cf.displayKey }
 
 // configInputEditor handles individual config field editing
 type configInputEditor struct {

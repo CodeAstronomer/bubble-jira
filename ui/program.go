@@ -66,8 +66,8 @@ func (pr *Program) StartWithSettings(cfg *config.Config, jc *jira.Client) error 
 
     settingsItems := []list.Item{
         menuItem{title: Strings["MenuConfigTitle"], enabled: true},
-        menuItem{title: Strings["MenuLicenceTitle"], enabled: true},
         menuItem{title: Strings["MenuKeybindingTitle"], enabled: true},
+        menuItem{title: Strings["MenuLicenceTitle"], enabled: true},
         menuItem{title: Strings["MenuBackTitle"], enabled: true},
     }
     m.settings = list.New(settingsItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)

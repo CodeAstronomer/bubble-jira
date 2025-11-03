@@ -44,5 +44,21 @@
   "HelpFlagHelp": "--help/-h Zeige diese Hilfe",
   "HelpFlagVersion": "-v Zeige Versionsnummer",
   "HelpFlagTasks": "-t Starte direkt in Aufgabenliste",
-  "HelpFlagSettings": "-s Starte direkt in den Einstellungen"
+  "HelpFlagSettings": "-s Starte direkt in den Einstellungen",
+
+  "SettingsConfigBaseUrl": "Basis URL",
+  "SettingsConfigEmail": "E-Mail",
+  "SettingsConfigApiToken": "API-Token",
+  "SettingsConfigJQL": "JQL-Abfrage",
+  "SettingsConfigGitIssueKeyLocation": "Task Key Position für Git",
+  "SettingsConfigGitIssueKeyStyle": "Task Key Stil",
+
+  "SettingsKeyBindingKeyUp": "Pfeil Hoch",
+  "SettingsKeyBindingKeyDown": "Pfeil Runter",
+  "SettingsKeyBindingKeyFastUp": "Bild Hoch",
+  "SettingsKeyBindingKeyFastDown": "Bild Runter",
+  "SettingsKeyBindingKeyEnter": "Eingabetaste",
+  "SettingsKeyBindingKeyBack": "Zurück",
+  "SettingsKeyBindingComment": "Kommentar Hinzufügen",
+  "SettingsKeyBindingSearch": "Suchen"
 }

@@ -62,8 +62,8 @@ func (m model) updateMenu(msg tea.Msg) (tea.Model, tea.Cmd) {
                 m.configValidError = ""
                 settingsItems := []list.Item{
                     menuItem{title: Strings["MenuConfigTitle"], enabled: true},
-                    menuItem{title: Strings["MenuLicenceTitle"], enabled: true},
                     menuItem{title: Strings["MenuKeybindingTitle"], enabled: true},
+                    menuItem{title: Strings["MenuLicenceTitle"], enabled: true},
                     menuItem{title: Strings["MenuBackTitle"], enabled: true},
                 }
                 m.settings = list.New(settingsItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
@@ -695,7 +695,7 @@ func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
 
                 m.updateConfigFields()
 
-                if m.editingMode == "config" && m.configInput.key == Strings["language"] {
+                if m.editingMode == "config" && m.configInput.key == "language" {
                     if !languageRegex.MatchString(value) {
                         m.configInput.focusSave = true
                         return m, nil
