@@ -17,6 +17,7 @@ func main() {
 
 	versionFlag := flag.Bool("v", false, "Show version")
 	taskFlag := flag.Bool("t", false, "Directly start in Task List View")
+	settingsFlag := flag.Bool("s", false, "Directly start in Settings View")
 
 	flag.Parse()
 
@@ -30,6 +31,7 @@ func main() {
         fmt.Println("  --help/ -h    " + ui.Strings["HelpFlagHelp"])
         fmt.Println("  -v           " + ui.Strings["HelpFlagVersion"])
         fmt.Println("  -t           " + ui.Strings["HelpFlagTasks"])
+        fmt.Println("  -s           " + ui.Strings["HelpFlagSettings"])
         return
     }
 
@@ -53,6 +55,14 @@ func main() {
 
     if *taskFlag {
     	if err := pr.StartWithTasks(cfg, jc); err != nil {
+    		fmt.Println("Error running program:", err)
+    		os.Exit(1)
+    	}
+    	return
+    }
+
+    if *settingsFlag {
+    	if err := pr.StartWithSettings(cfg, jc); err != nil {
     		fmt.Println("Error running program:", err)
     		os.Exit(1)
     	}

@@ -43,5 +43,6 @@
   "HelpFlags": "Flags",
   "HelpFlagHelp": "--help/-h Zeige diese Hilfe",
   "HelpFlagVersion": "-v Zeige Versionsnummer",
-  "HelpFlagTasks": "-t Starte direkt in Aufgabenliste"
+  "HelpFlagTasks": "-t Starte direkt in Aufgabenliste",
+  "HelpFlagSettings": "-s Starte direkt in den Einstellungen"
 }

@@ -7,6 +7,7 @@ import (
 	"bubble-jira/jira"
 	"bubble-jira/config"
 
+    "github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -52,6 +53,30 @@ func (pr *Program) StartWithTasks(cfg *config.Config, jc *jira.Client) error {
 	go func() {
 		pr.p.Send(startTasksMsg{})
 	}()
+
+	// Start the program
+	return pr.p.Start()
+}
+
+func (pr *Program) StartWithSettings(cfg *config.Config, jc *jira.Client) error {
+	// Create model
+    m := newModel(cfg, jc)
+    m.state = "settings"
+    m.configValidError = ""
+
+    settingsItems := []list.Item{
+        menuItem{title: Strings["MenuConfigTitle"], enabled: true},
+        menuItem{title: Strings["MenuLicenceTitle"], enabled: true},
+        menuItem{title: Strings["MenuKeybindingTitle"], enabled: true},
+        menuItem{title: Strings["MenuBackTitle"], enabled: true},
+    }
+    m.settings = list.New(settingsItems, list.NewDefaultDelegate(), terminalWidth, terminalHeight)
+    m.settings.Title = Strings["SettingsTitle"]
+    m.settings.SetShowHelp(true)
+    m.settings.SetShowPagination(false)
+
+	// Create the program
+	pr.p = tea.NewProgram(m, tea.WithAltScreen())
 
 	// Start the program
 	return pr.p.Start()
