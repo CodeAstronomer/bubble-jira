@@ -1,17 +1,18 @@
 package ui
 
 import (
+    "embed"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"golang.org/x/term"
 	"bubble-jira/config"
 	"regexp"
 )
+//go:embed languages
+var languageFS embed.FS
 
 func getTerminalSize() (int, int) {
 	width, height, err := term.GetSize(int(os.Stdout.Fd()))
@@ -55,15 +56,15 @@ var (
 
 // loadStrings loads the JSON translation file for the current language
 func loadStrings(lang string) {
-	path := filepath.Join("languages", lang+".json")
-	data, err := ioutil.ReadFile(path)
+	path := "languages/" + lang + ".json"
+	data, err := languageFS.ReadFile(path)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to read language file '%s': %v", path, err))
-	}
-	err = json.Unmarshal(data, &Strings)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to parse language JSON: %v", err))
-	}
+        panic(fmt.Sprintf("Failed to read embedded language file '%s': %v", path, err))
+    }
+    err = json.Unmarshal(data, &Strings)
+    if err != nil {
+        panic(fmt.Sprintf("Failed to parse language JSON: %v", err))
+    }
 }
 
 // Init must be called at program start to load strings and setup maps
