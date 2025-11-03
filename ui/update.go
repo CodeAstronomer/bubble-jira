@@ -727,7 +727,7 @@ func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
                 return m, nil
             }
 
-		case contains(exitKeys, msg.String()):
+		case msg.String() == "esc":
 			if m.editingMode == "keybindings" {
 				m.configList = newKeybindingEditor(m.cfg)
 			} else {

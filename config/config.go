@@ -15,8 +15,7 @@ type Keys struct {
 	FastDown        string   `json:"fast_down"`
 	Confirm         string   `json:"confirm"`
 	Comment         string   `json:"comment"`
-	SearchKey       string   `json:"search_key"`
-	ForceQuit       string   `json:"force_quit"`
+	Search       string   `json:"search_key"`
 }
 
 type Config struct {
@@ -44,8 +43,7 @@ func DefaultConfig() *Config {
 			FastDown: "pgdown",
 			Confirm:  "enter",
 			Comment:  "n",
-			SearchKey: "/",
-			ForceQuit: "q",
+			Search: "/",
 		},
 		Lang:            "de-DE",
 		IssueKeyLoc:     "1",
@@ -136,9 +134,9 @@ func (c *Config) GetKeys() (exitKeys []string, exitKeysStr string, up string, do
 	fastDown = c.Keys.FastDown
 	enter = c.Keys.Confirm
 	comment = c.Keys.Comment
-	searchKey = c.Keys.SearchKey
+	searchKey = c.Keys.Search
 
-	forceQuit = "ctrl+" + c.Keys.ForceQuit
+	forceQuit = "ctrl+q"
 
 	return
 }

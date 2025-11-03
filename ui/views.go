@@ -111,8 +111,7 @@ func (m model) configInputView() string {
     // Footer
     footer := lipgloss.NewStyle().Faint(true).Render(
         keyMap[keyUp]+"/"+keyMap[keyDown]+": navigate • "+
-            keyMap[keyEnter]+": confirm • "+
-            keyExitKeysStr+": cancel",
+            keyMap[keyEnter]+": confirm • esc: cancel",
     )
 
     return m.centralLayout(content.String(), footer)

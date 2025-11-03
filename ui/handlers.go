@@ -81,6 +81,7 @@ func newKeybindingEditor(cfg *config.Config) configListEditor {
 		{key: "Enter", value: cfg.Keys.Confirm},
 		{key: "Back/Cancel", value: exitKeysStr},
 		{key: "Add Comment", value: cfg.Keys.Comment},
+		{key: "Search", value: cfg.Keys.Search},
 	}
 
 	items := make([]list.Item, len(fields))
@@ -142,6 +143,8 @@ func (m *model) updateConfigFields() {
 			m.cfg.Keys.FastDown = field.value
 		case "Enter":
 			m.cfg.Keys.Confirm = field.value
+		case "Search":
+			m.cfg.Keys.Search = field.value
 		case "Back/Cancel":
 			m.cfg.Keys.Exit = strings.Split(field.value, "/")
 		}
