@@ -5,7 +5,6 @@ import (
 	"bubble-jira/config"
     "fmt"
     "time"
-    "regexp"
     "strconv"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -17,8 +16,6 @@ import (
     "github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
 )
-
-var languageRegex = regexp.MustCompile(`^[a-z]{2}-[A-Z]{2}$`)
 
 func contains(slice []string, val string) bool {
     for _, s := range slice {

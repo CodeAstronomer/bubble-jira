@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/term"
 	"bubble-jira/config"
+	"regexp"
 )
 
 func getTerminalSize() (int, int) {
@@ -42,6 +43,7 @@ var (
 	style1              = "[XXX-XXXX]"
 	style2              = "(XXX-XXXX)"
 	allowedLanguages = []string{"de-DE", "en-EN"}
+    languageRegex = regexp.MustCompile(`^[a-z]{2}-[A-Z]{2}$`)
 
 	exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter, keyNewComment = cfg.GetKeys()
     Strings map[string]string
