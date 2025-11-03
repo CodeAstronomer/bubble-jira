@@ -15,6 +15,8 @@ Configuration is stored in `~/.config/bubble-jira/config.json`. Edit from the CL
 
 start:  `go run .`
 
+create new mac os installer: `./build-pkg.sh` and `--version X.X.X` is optional
+
 ### ~/.zshrc Alias
 
 Füge folgendes in deine `~/.zshrc` ein:
