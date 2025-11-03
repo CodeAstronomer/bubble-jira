@@ -114,7 +114,7 @@ type configField struct {
 	value string
 }
 
-func (cf configField) Title() string       { return cf.key }
+func (cf configField) Title()       string { return cf.key }
 func (cf configField) Description() string { return cf.value }
 func (cf configField) FilterValue() string { return cf.key }
 
@@ -190,7 +190,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     switch msg := msg.(type) {
     case tea.KeyMsg:
         switch msg.String() {
-        case "ctrl+q":
+        case keyForceQuit:
             return m, tea.Quit
         }
     }

@@ -46,7 +46,7 @@ var (
 	allowedLanguages = []string{"de-DE", "en-EN"}
     languageRegex = regexp.MustCompile(`^[a-z]{2}-[A-Z]{2}$`)
 
-	exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter, keyNewComment = cfg.GetKeys()
+	exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter, keyNewComment, keySearch, keyForceQuit = cfg.GetKeys()
     Strings map[string]string
 	keyMap map[string]string
     keyLeftRightMap map[string]string

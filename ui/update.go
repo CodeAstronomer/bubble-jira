@@ -274,7 +274,7 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
 
     case tea.KeyMsg:
         switch {
-        case msg.String() == "/":
+        case msg.String() == keySearch:
             m.originalTaskRows = m.tasksTable.Rows()
             ti := textinput.New()
             ti.Placeholder = "Search by Key or Title..."
@@ -1138,24 +1138,22 @@ func (m model) updateTaskSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		switch {
+		case contains(exitKeys, msg.String()):
 			m.tasksTable.SetRows(m.originalTaskRows)
 			m.originalTaskRows = nil
 			m.taskSearchInput.SetValue("")
 			m.state = "tasks"
 			return m, nil
-		case "enter":
-			m.originalTaskRows = nil // Clear backup
+		case msg.String() == keyEnter:
+			m.originalTaskRows = nil
 			m.state = "tasks"
 			return m, nil
 		}
 	}
 
-	// Update the text input
 	m.taskSearchInput, cmd = m.taskSearchInput.Update(msg)
 
-	// Filter the tasks
 	query := strings.ToLower(m.taskSearchInput.Value())
 	if query == "" {
 		m.tasksTable.SetRows(m.originalTaskRows)

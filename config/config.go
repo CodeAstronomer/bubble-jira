@@ -8,13 +8,15 @@ import (
 )
 
 type Keys struct {
-	Exit     []string `json:"exit"`
-	Up       string   `json:"up"`
-	Down     string   `json:"down"`
-	FastUp   string   `json:"fast_up"`
-	FastDown string   `json:"fast_down"`
-	Confirm  string   `json:"confirm"`
-	Comment  string   `json:"comment"`
+	Exit            []string `json:"exit"`
+	Up              string   `json:"up"`
+	Down            string   `json:"down"`
+	FastUp          string   `json:"fast_up"`
+	FastDown        string   `json:"fast_down"`
+	Confirm         string   `json:"confirm"`
+	Comment         string   `json:"comment"`
+	SearchKey       string   `json:"search_key"`
+	ForceQuit       string   `json:"force_quit"`
 }
 
 type Config struct {
@@ -25,7 +27,7 @@ type Config struct {
 	Keys            Keys   `json:"keys"`
 	Lang            string `json:"lang"`
 	IssueKeyLoc     string `json:"issue_key_loc"`
-	IssueKeyStyle string `json:"issue_key_style"`
+	IssueKeyStyle   string `json:"issue_key_style"`
 }
 
 func DefaultConfig() *Config {
@@ -42,6 +44,8 @@ func DefaultConfig() *Config {
 			FastDown: "pgdown",
 			Confirm:  "enter",
 			Comment:  "n",
+			SearchKey: "/",
+			ForceQuit: "q",
 		},
 		Lang:            "de-DE",
 		IssueKeyLoc:     "1",
@@ -122,7 +126,7 @@ func (c *Config) IsValid() bool {
 	return true
 }
 
-func (c *Config) GetKeys() (exitKeys []string, exitKeysStr string, up string, down string, fastUp string, fastDown string, enter string, comment string) {
+func (c *Config) GetKeys() (exitKeys []string, exitKeysStr string, up string, down string, fastUp string, fastDown string, enter string, comment string, searchKey string, forceQuit string) {
 	exitKeys = c.Keys.Exit
 	exitKeysStr = strings.Join(exitKeys, "/")
 
@@ -132,6 +136,9 @@ func (c *Config) GetKeys() (exitKeys []string, exitKeysStr string, up string, do
 	fastDown = c.Keys.FastDown
 	enter = c.Keys.Confirm
 	comment = c.Keys.Comment
+	searchKey = c.Keys.SearchKey
+
+	forceQuit = "ctrl+" + c.Keys.ForceQuit
 
 	return
 }
