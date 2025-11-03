@@ -85,6 +85,8 @@ type model struct {
         cursor   int
         choice   string
     }
+    taskSearchInput  textinput.Model
+    originalTaskRows []table.Row
 }
 
 // fetchingModel represents the fetching state UI
@@ -185,6 +187,14 @@ func (m model) Init() tea.Cmd {
 
 // Update handles all user input and messages
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    switch msg := msg.(type) {
+    case tea.KeyMsg:
+        switch msg.String() {
+        case "ctrl+q":
+            return m, tea.Quit
+        }
+    }
+
 	switch msg.(type) {
 	case startTasksMsg:
 		m.state = "fetching"
@@ -227,6 +237,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         return m.updateAddCommentInput(msg)
     case "enter-commit-message":
         return m.updateEnterCommitMessage(msg)
+    case "task-search":
+        return m.updateTaskSearch(msg)
     case "issue-git-location":
         return m.updateIssueGitLocation(msg)
     case "issue-git-style":
@@ -271,6 +283,8 @@ func (m model) View() string {
         return m.addCommentView()
     case "enter-commit-message":
         return m.enterCommitMessage()
+    case "task-search":
+        return m.taskSearchView()
     case "issue-git-location":
         return m.issueGitLocation()
     case "issue-git-style":

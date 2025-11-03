@@ -5,11 +5,11 @@
 set -euo pipefail
 
 # App-specific variables
-APP_NAME="bubble-jira"
-BINARY_NAME="bubble-jira"
+APP_NAME="jira"
+BINARY_NAME="jira"
 MAIN_GO="main.go"
-PKG_ID="com.bubblejira.cli"
-STAGING_DIR="bubble-jira-pkg"
+PKG_ID="com.jira.cli"
+STAGING_DIR="jira-pkg"
 
 # ANSI Color Codes
 GREEN="\033[0;32m"
@@ -118,14 +118,3 @@ echo "To test the installer:"
 echo "1. Double-click '${FINAL_PKG_NAME}' to install."
 echo "2. Open a NEW terminal window."
 echo "3. Type 'bubble-jira -h' to test (the binary name)."
-echo -e "\n${YELLOW}NOTE:${NC} This installer does NOT add the 'jira()' alias."
-echo "You must instruct users to add it to their ~/.zshrc manually."
-echo "Example for README.md:"
-echo -e "\n  echo '\n# bubble-jira alias\nfunction jira() {\n  bubble-jira \"\$@\"\n}\n' >> ~/.zshrc"
-echo -e "  source ~/.zshrc\n"
-
-
-echo -e "\nTo uninstall:"
-echo "1. sudo rm /usr/local/bin/$BINARY_NAME"
-echo "2. sudo pkgutil --forget $PKG_ID"
-echo "3. (Manually remove alias from ~/.zshrc if added)"

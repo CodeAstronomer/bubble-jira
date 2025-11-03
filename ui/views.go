@@ -265,3 +265,23 @@ func (m model) issueGitStyle() string {
 
     return m.centralLayout(content.String(), footer)
 }
+
+func (m model) taskSearchView() string {
+	var content strings.Builder
+	content.Grow(512)
+
+	// Render the search input
+	content.WriteString("Search: \n")
+	content.WriteString(m.taskSearchInput.View())
+	content.WriteString("\n\n")
+
+	// Render the filtered table
+	content.WriteString(tableBaseStyle.Render(m.tasksTable.View()))
+	content.WriteString("\n")
+
+	// Render help
+	footer := lipgloss.NewStyle().Faint(true).Render("esc: cancel search • " + keyMap[keyEnter] + ": confirm search and exit")
+	content.WriteString(footer)
+
+	return content.String()
+}

@@ -6,6 +6,7 @@ import (
     "fmt"
     "time"
     "strconv"
+    "strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/progress"
@@ -44,7 +45,6 @@ func (m model) updateMenu(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			switch menuItemSelected.title {
 			case Strings["MenuViewTasksTitle"]:
-                // Nur starten, wenn Config gültig ist
                 if !m.cfg.IsValid() {
                     m.configValidError = "⚠ Config incomplete! Please fill all fields in Settings > Edit Config first."
                     return m, nil
@@ -274,6 +274,19 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
 
     case tea.KeyMsg:
         switch {
+        case msg.String() == "/":
+            m.originalTaskRows = m.tasksTable.Rows()
+            ti := textinput.New()
+            ti.Placeholder = "Search by Key or Title..."
+            ti.Focus()
+            ti.CharLimit = 100
+            ti.Width = 50
+            ti.PromptStyle = focusedStyle
+            ti.TextStyle = focusedStyle
+            m.taskSearchInput = ti
+            m.state = "task-search"
+            return m, nil
+
         case contains(exitKeys, msg.String()):
             if m.hoverTimer != nil {
                 m.hoverTimer.Stop()
@@ -678,12 +691,15 @@ func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
             if m.configInput.focusSave {
                 value := m.configInput.input.Value()
 
+                m.configList.fields[m.editingFieldIdx].value = value
+
+                m.updateConfigFields()
+
                 if m.editingMode == "config" && m.configInput.key == Strings["language"] {
                     if !languageRegex.MatchString(value) {
                         m.configInput.focusSave = true
                         return m, nil
                     }
-
                     isAllowed := false
                     for _, lang := range allowedLanguages {
                         if value == lang {
@@ -691,21 +707,13 @@ func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
                             break
                         }
                     }
-
                     if !isAllowed {
-                        m.configInput.focusSave = true
-                        return m, nil
-                    }
-
-                    m.cfg.Lang = value
-                    if err := config.Save(m.cfg); err != nil {
                         m.configInput.focusSave = true
                         return m, nil
                     }
 
                     Lang = value
                     loadStrings(Lang)
-
                     m.configValidError = ""
                 }
 
@@ -715,8 +723,6 @@ func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
                     m.configList = newConfigListEditor(m.cfg)
                 }
 
-                m.configList.fields[m.editingFieldIdx].value = value
-                m.updateConfigFields()
                 m.state = "config"
                 return m, nil
             }
@@ -1125,4 +1131,48 @@ func (m model) updateIssueGitStyle(msg tea.Msg) (tea.Model, tea.Cmd) {
         }
     }
 	return m, nil
+}
+
+func (m model) updateTaskSearch(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "esc":
+			m.tasksTable.SetRows(m.originalTaskRows)
+			m.originalTaskRows = nil
+			m.taskSearchInput.SetValue("")
+			m.state = "tasks"
+			return m, nil
+		case "enter":
+			m.originalTaskRows = nil // Clear backup
+			m.state = "tasks"
+			return m, nil
+		}
+	}
+
+	// Update the text input
+	m.taskSearchInput, cmd = m.taskSearchInput.Update(msg)
+
+	// Filter the tasks
+	query := strings.ToLower(m.taskSearchInput.Value())
+	if query == "" {
+		m.tasksTable.SetRows(m.originalTaskRows)
+		return m, cmd
+	}
+
+	filteredRows := make([]table.Row, 0)
+	for _, row := range m.originalTaskRows {
+		key := strings.ToLower(row[0])
+		title := strings.ToLower(row[1])
+
+		if strings.Contains(key, query) || strings.Contains(title, query) {
+			filteredRows = append(filteredRows, row)
+		}
+	}
+	m.tasksTable.SetRows(filteredRows)
+	m.tasksTable.SetCursor(0)
+
+	return m, cmd
 }
