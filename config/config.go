@@ -15,7 +15,7 @@ type Keys struct {
 	FastDown        string   `json:"fast_down"`
 	Confirm         string   `json:"confirm"`
 	Comment         string   `json:"comment"`
-	Search       string   `json:"search_key"`
+	Search          string   `json:"search_key"`
 }
 
 type Config struct {

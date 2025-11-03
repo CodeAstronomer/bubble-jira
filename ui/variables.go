@@ -28,8 +28,8 @@ const AppVersion = "1.0.0"
 
 // Initialize everything that depends on terminal size
 var (
-	cfg, _              = config.Load()
-	Lang                = cfg.Lang
+	cfg                   *config.Config
+	Lang                  string
 	width, height       = getTerminalSize()
 	topBottomPadding    = 1
 	leftRightPadding    = 2
@@ -39,14 +39,23 @@ var (
 	closeAfterSecGit    = 0
 	taskViewHeight      = 30
 	autoFetchTimeSec    = 3
-	keyLeft             = strings.TrimSpace(cfg.IssueKeyLoc)
-	keyWrapper          = strings.TrimSpace(cfg.IssueKeyStyle)
+	keyLeft               string
+	keyWrapper            string
 	style1              = "[XXX-XXXX]"
 	style2              = "(XXX-XXXX)"
-	allowedLanguages = []string{"de-DE", "en-EN"}
-    languageRegex = regexp.MustCompile(`^[a-z]{2}-[A-Z]{2}$`)
+	allowedLanguages    = []string{"de-DE", "en-EN"}
+    languageRegex       = regexp.MustCompile(`^[a-z]{2}-[A-Z]{2}$`)
 
-	exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter, keyNewComment, keySearch, keyForceQuit = cfg.GetKeys()
+	exitKeys        []string
+    keyExitKeysStr  string
+    keyUp           string
+    keyDown         string
+    keyFastUp       string
+    keyFastDown     string
+    keyEnter        string
+    keyNewComment   string
+    keySearch       string
+    keyForceQuit    string
     Strings map[string]string
 	keyMap map[string]string
     keyLeftRightMap map[string]string
@@ -69,9 +78,16 @@ func loadStrings(lang string) {
 
 // Init must be called at program start to load strings and setup maps
 func Init() {
-    if cfg == nil {
-        panic("Config konnte nicht geladen werden")
+    var err error
+    cfg, err = config.Load()
+    if err != nil {
+        panic(fmt.Sprintf("Failed to load config: %v", err))
     }
+
+    Lang = cfg.Lang
+    keyLeft = strings.TrimSpace(cfg.IssueKeyLoc)
+    keyWrapper = strings.TrimSpace(cfg.IssueKeyStyle)
+    exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter, keyNewComment, keySearch, keyForceQuit = cfg.GetKeys()
 
 	loadStrings(Lang)
 

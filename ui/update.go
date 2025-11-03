@@ -164,13 +164,13 @@ func (m model) updateFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tickMsg:
 		if m.fetching.currentStage < len(m.fetching.stages)-1 {
-			m.fetching.currentStage++
-			percent := float64(m.fetching.currentStage) / float64(len(m.fetching.stages))
-			progressCmd := m.fetching.progress.SetPercent(percent)
-			m.fetching.status = m.fetching.stages[m.fetching.currentStage]
-			return m, tea.Batch(tickFetchCmd(), progressCmd)
-		}
-		return m, nil
+            m.fetching.currentStage++
+            percent := float64(m.fetching.currentStage+1) / float64(len(m.fetching.stages))
+            progressCmd := m.fetching.progress.SetPercent(percent)
+            m.fetching.status = m.fetching.stages[m.fetching.currentStage]
+            return m, tea.Batch(tickFetchCmd(), progressCmd)
+        }
+		return m, tickFetchCmd()
 
 		case issuesFetchedMsg:
         	if msg.err != nil {
@@ -472,12 +472,12 @@ func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tickMsg:
 		// Increment progress stage if not finished
 		if m.fetching.currentStage < len(m.fetching.stages)-1 {
-			m.fetching.currentStage++
-			m.fetching.status = m.fetching.stages[m.fetching.currentStage]
-			percent := float64(m.fetching.currentStage+1) / float64(len(m.fetching.stages))
-			progressCmd := m.fetching.progress.SetPercent(percent)
-			return m, tea.Batch(tickFetchCmd(), progressCmd)
-		}
+            m.fetching.currentStage++
+            m.fetching.status = m.fetching.stages[m.fetching.currentStage]
+            percent := float64(m.fetching.currentStage+1) / float64(len(m.fetching.stages))
+            progressCmd := m.fetching.progress.SetPercent(percent)
+            return m, tea.Batch(tickFetchCmd(), progressCmd)
+        }
 
 
         // Progress is done
@@ -488,13 +488,13 @@ func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Only quit automatically if this animation came from statusCodeMsg
 		if m.fetching.fromStatus {
-			fmt.Printf("\nThis window will close in %d seconds.\n", closeAfterSec)
-			m.fetching.fromStatus = false // reset flag
-			return m, tea.Tick(time.Duration(closeAfterSec)*time.Second, func(time.Time) tea.Msg {
-				return quitAfterDelayMsg{}
-			})
-		}
-		return m, nil
+            fmt.Printf("\nThis window will close in %d seconds.\n", closeAfterSec)
+            m.fetching.fromStatus = false // reset flag
+            return m, tea.Tick(time.Duration(closeAfterSec)*time.Second, func(time.Time) tea.Msg {
+                return quitAfterDelayMsg{}
+            })
+        }
+		return m, tickFetchCmd()
 
 	case statusCodeMsg:
 		if msg.Code >= 200 && msg.Code < 300 {
