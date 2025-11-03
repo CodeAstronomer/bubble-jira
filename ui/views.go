@@ -1,160 +1,267 @@
 package ui
 
 import (
-	"bubble-jira/jira"
-	"encoding/json"
-	"strings"
-	"time"
+    "strings"
+	"github.com/charmbracelet/lipgloss"
 )
 
-// ContentNode represents a node in Jira's structured content format
-type ContentNode struct {
-	Type    string                 `json:"type"`
-	Text    string                 `json:"text,omitempty"`
-	Content []ContentNode          `json:"content,omitempty"`
-	Attrs   map[string]interface{} `json:"attrs,omitempty"`
+// licenceView renders the licence view
+func (m model) licenceView() string {
+    if m.licenceLoading {
+        return "Loading licence..."
+    }
+
+    lines := strings.Split(m.licenceContent, "\n")
+
+    // Calculate visible lines
+    visibleLines := terminalHeight - 2 // leave 2 lines for instructions
+    if m.licenceOffset > len(lines)-visibleLines {
+        m.licenceOffset = max(0, len(lines)-visibleLines)
+    }
+    if m.licenceOffset < 0 {
+        m.licenceOffset = 0
+    }
+
+    end := m.licenceOffset + visibleLines
+    if end > len(lines) {
+        end = len(lines)
+    }
+    visible := lines[m.licenceOffset:end]
+
+    content := strings.Join(visible, "\n")
+    footer := lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": scroll • "+ keyMap[keyFastUp]+"/"+ keyMap[keyFastDown] +": fast-scroll • "+ keyExitKeysStr +": back")
+
+    // Render with terminal width and height, but no forced wrapping
+    return lipgloss.NewStyle().
+        Width(terminalWidth).
+        Height(terminalHeight).
+        Render(content + "\n\n" + footer)
 }
 
-// CommentBody represents the body structure of a Jira comment
-type CommentBody struct {
-	Content []ContentNode `json:"content"`
+// tasksTableView renders the tasks table view
+func (m model) tasksTableView() string {
+	var content strings.Builder
+	content.Grow(512)
+	content.WriteString(tableBaseStyle.Render(m.tasksTable.View()))
+	content.WriteString("\n")
+	content.WriteString(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": navigate • ␣: comments • " + keyMap[keyEnter] +": select • "+ keyExitKeysStr +": back"))
+	return content.String()
 }
 
-// truncateString truncates a string to maxLen characters and adds ellipsis
-func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
+// taskContextView renders the task context menu view
+func (m model) taskContextView() string {
+	return m.taskContextMenu.View()
+}
+
+// fetchingView renders the fetching view
+func (m model) fetchingView() string {
+	if m.fetching.error != "" {
+		return lipgloss.NewStyle().Padding(topBottomPadding, leftRightPadding).Render(
+			"Error: " + m.fetching.error,
+		)
 	}
-	return s[:maxLen-3] + "..."
+
+	var content strings.Builder
+    content.Grow(128) // Pre-allocate buffer
+    content.WriteString(m.fetching.stages[m.fetching.currentStage])
+    content.WriteString("\n\n")
+    content.WriteString(m.fetching.progress.View())
+    content.WriteString("\n")
+    return lipgloss.NewStyle().Padding(topBottomPadding, leftRightPadding).Render(content.String())
 }
 
-// formatTime formats a time string from Jira format to a readable format
-func formatTime(timeStr string) string {
-	// Parse the time string from Jira (e.g., "2025-10-28T09:31:21.319+0100")
-	t, err := time.Parse("2006-01-02T15:04:05.000-0700", timeStr)
-	if err != nil {
-		// Try alternative format
-		t, err = time.Parse(time.RFC3339, timeStr)
-		if err != nil {
-			return timeStr
+// commentsView renders the comments view
+func (m model) commentsView() string {
+	var content strings.Builder
+	content.Grow(m.screenWidth * 10)
+	content.WriteString(m.commentsViewport.View())
+
+    // Footer
+    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": scroll • "+ keyNewComment +": Add Comment • "+ keyExitKeysStr +": back"))
+
+    return m.centralLayout(content.String(), footer)
+}
+
+// configListView renders the config list view
+func (m model) configListView() string {
+	return m.configList.list.View()
+}
+
+// configInputView renders the config input view
+func (m model) configInputView() string {
+	var content strings.Builder
+	content.Grow(256) // Pre-allocate buffer
+	content.WriteString("Editing: ")
+	content.WriteString(m.configInput.key)
+	if m.configInput.key == Strings["language"] {
+	    content.WriteString("\n"+ lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("Only in this format: de-DE"))
+	    content.WriteString("\n"+ lipgloss.NewStyle().Render("You can choose between these languages: " + strings.Join(allowedLanguages, ", ")))
+	}
+	content.WriteString("\n\n")
+	content.WriteString(m.configInput.input.View())
+	content.WriteString("\n\n")
+
+    // Render save button
+    if m.configInput.focusSave {
+        content.WriteString(focusedButton)
+    } else {
+        content.WriteString(blurredButton)
+    }
+
+    // Footer
+    footer := lipgloss.NewStyle().Faint(true).Render(
+        keyMap[keyUp]+"/"+keyMap[keyDown]+": navigate • "+
+            keyMap[keyEnter]+": confirm • "+
+            keyExitKeysStr+": cancel",
+    )
+
+    return m.centralLayout(content.String(), footer)
+}
+
+// taskStatusView
+func (m model) taskStatusView() string {
+    var statuses = []string{
+    	Strings["Open"],
+    	Strings["CurrentlyInProgress"],
+    	Strings["Done"],
+    	Strings["Reopened"],
+    	Strings["Closed"],
+    	Strings["Backlog"],
+    	Strings["QM"],
+    	Strings["Waiting"],
+    	Strings["Staging"],
+    }
+	var content strings.Builder
+	content.Grow(256)
+
+	content.WriteString("🪶 Choose Task Status\n\n")
+	content.WriteString("\n\nSelect Status:\n")
+
+	for i, status := range statuses {
+		if m.jiraStatusInput.cursor == i {
+			content.WriteString("(•) ")
+		} else {
+			content.WriteString("( ) ")
 		}
+		content.WriteString(status)
+		content.WriteString("\n")
 	}
-	return t.Format("2006-01-02 15:04 MST")
+
+    // Footer
+    footer := lipgloss.NewStyle().Faint(true).Render(
+        keyMap[keyUp]+"/"+keyMap[keyDown]+": navigate • "+
+            keyMap[keyEnter]+": confirm • "+
+            keyExitKeysStr+": cancel",
+    )
+
+    return m.centralLayout(content.String(), footer)
 }
 
-// parseContentNodes recursively parses content nodes and builds a string
-func parseContentNodes(nodes []ContentNode, result *strings.Builder, depth int) {
-	for _, node := range nodes {
-		switch node.Type {
-		case "paragraph":
-			for _, child := range node.Content {
-				switch child.Type {
-				case "text":
-					result.WriteString(child.Text)
-				case "mention":
-					if text, ok := child.Attrs["text"].(string); ok {
-						result.WriteString(text)
-					}
-				case "hardBreak":
-					result.WriteString("\n")
-				}
-			}
-			result.WriteString("\n")
+// addCommentView renders the Add Comment input view
+func (m model) addCommentView() string {
+    var content strings.Builder
+    content.Grow(512)
 
-		case "bulletList", "orderedList":
-			for _, child := range node.Content {
-				if child.Type == "listItem" {
-					result.WriteString("• ")
-					parseContentNodes(child.Content, result, depth+1)
-				}
-			}
+    content.WriteString("Add a comment (max 1000 chars):\n\n")
+    content.WriteString(m.addCommentInput.input.View())
+    content.WriteString("\n\n")
 
-		case "codeBlock":
-			result.WriteString("```\n")
-			for _, child := range node.Content {
-				if child.Type == "text" {
-					result.WriteString(child.Text)
-				}
-			}
-			result.WriteString("\n```\n")
+    // Render send button
+    if m.addCommentInput.focusSend {
+        content.WriteString(focusedButton)
+    } else {
+        content.WriteString(blurredButton)
+    }
 
-		case "heading":
-			if level, ok := node.Attrs["level"].(float64); ok {
-				for i := 0; i < int(level); i++ {
-					result.WriteString("#")
-				}
-				result.WriteString(" ")
-			}
-			for _, child := range node.Content {
-				if child.Type == "text" {
-					result.WriteString(child.Text)
-				}
-			}
-			result.WriteString("\n")
+    // Footer
+    parts := strings.Split(keyExitKeysStr, "/")
+    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": navigate • "+ keyMap[keyEnter] +": Send • "+ parts[1] +": cancel"))
 
-		case "text":
-			result.WriteString(node.Text)
-
-		default:
-			// Recursively parse unknown types
-			if len(node.Content) > 0 {
-				parseContentNodes(node.Content, result, depth)
-			}
-		}
-	}
+    return m.centralLayout(content.String(), footer)
 }
 
-// parseCommentBody parses the body JSON from a Jira comment
-func parseCommentBody(bodyJSON string) string {
-	var commentBody CommentBody
-	if err := json.Unmarshal([]byte(bodyJSON), &commentBody); err != nil {
-		// If it's not valid JSON, return as-is
-		return bodyJSON
-	}
+// EnterCommitMessage renders the Enter Commit Message view
+func (m model) enterCommitMessage() string {
+    var content strings.Builder
+    content.Grow(512)
 
-	var result strings.Builder
-	parseContentNodes(commentBody.Content, &result, 0)
+    content.WriteString("Add a Commit Message (max 1000 chars):\n")
+    content.WriteString("\n"+ lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("DO NOT Type [XXX-XXXX], it is already added to the final comment. \n"))
+    content.WriteString("\n" + m.commitGitMessage.input.View())
+    content.WriteString("\n\n")
 
-	return strings.TrimSpace(result.String())
+    // Render send button
+    if m.commitGitMessage.focusSend {
+        content.WriteString(focusedButtonGit)
+    } else {
+        content.WriteString(blurredButtonGit)
+    }
+
+    // Footer
+    parts := strings.Split(keyExitKeysStr, "/")
+    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": navigate • "+ keyMap[keyEnter] +": Copy Full Command • "+ parts[1] +": cancel"))
+
+    return m.centralLayout(content.String(), footer)
 }
 
-// renderCommentsToMarkdown converts comments to markdown format
-func renderCommentsToMarkdown(comments []jira.Comment) string {
-	if len(comments) == 0 {
-		return Strings["noComments"]
+func (m model) issueGitLocation() string {
+    var pos = []string{
+    	Strings["left"],
+    	Strings["right"],
+    }
+	var content strings.Builder
+	content.Grow(256)
+
+	content.WriteString("Choose Jira Issue Key Git Location\n\n")
+	content.WriteString("\n\nSelect Location:\n")
+
+	for i, position := range pos {
+		if m.gitIssueLoc.cursor == i {
+			content.WriteString("(•) ")
+		} else {
+			content.WriteString("( ) ")
+		}
+		content.WriteString(position)
+		content.WriteString("\n")
 	}
 
-	var result strings.Builder
-	result.Grow(len(comments) * 256) // Pre-allocate based on comment count
+    // Footer
+    footer := lipgloss.NewStyle().Faint(true).Render(
+        keyMap[keyUp]+"/"+keyMap[keyDown]+": navigate • "+
+            keyMap[keyEnter]+": confirm • "+
+            keyExitKeysStr+": cancel",
+    )
 
-	for _, comment := range comments {
-		authorName := comment.Author.DisplayName
-		if authorName == "" {
-			authorName = comment.Author.EmailAddress
+    return m.centralLayout(content.String(), footer)
+}
+
+func (m model) issueGitStyle() string {
+    var styles = []string{
+    	style1,
+    	style2,
+    }
+	var content strings.Builder
+	content.Grow(256)
+
+	content.WriteString("Choose Jira Issue Key Git Style\n\n")
+	content.WriteString("\n\nSelect Style:\n")
+
+	for i, style := range styles {
+		if m.gitIssueStyle.cursor == i {
+			content.WriteString("(•) ")
+		} else {
+			content.WriteString("( ) ")
 		}
-
-		result.WriteString("**")
-		result.WriteString(authorName)
-		result.WriteString("** - ")
-		result.WriteString(formatTime(comment.Created))
-		result.WriteString("\n\n")
-
-		// Convert body to JSON string for parsing
-		var bodyStr string
-		if comment.BodyJSON != "" {
-			bodyStr = comment.BodyJSON
-		} else if comment.Body != nil {
-			bodyBytes, _ := json.Marshal(comment.Body)
-			bodyStr = string(bodyBytes)
-		}
-
-		if bodyStr != "" {
-			result.WriteString(parseCommentBody(bodyStr))
-			result.WriteString("\n\n")
-		}
-
-		result.WriteString("---\n\n")
+		content.WriteString(style)
+		content.WriteString("\n")
 	}
 
-	return result.String()
+    // Footer
+    footer := lipgloss.NewStyle().Faint(true).Render(
+        keyMap[keyUp]+"/"+keyMap[keyDown]+": navigate • "+
+            keyMap[keyEnter]+": confirm • "+
+            keyExitKeysStr+": cancel",
+    )
+
+    return m.centralLayout(content.String(), footer)
 }

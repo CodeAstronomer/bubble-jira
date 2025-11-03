@@ -1,17 +1,17 @@
 package ui
 
 import (
+    _ "embed"
     "context"
-    "io"
-    "net/http"
-    "path/filepath"
     "time"
-    "os"
+    "fmt"
 
 	"bubble-jira/jira"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+//go:embed LICENSE
+var licenseContent []byte
 
 type statusCodeMsg struct {
 	Code int
@@ -64,39 +64,17 @@ func tickFetchCmd() tea.Cmd {
 // loadLicenceCmd creates a command to load the license
 func loadLicenceCmd() tea.Cmd {
 	return func() tea.Msg {
-		content, err := loadLicenceContent()
-		return licenceLoadedMsg{content: content, err: err}
+	    content, err := loadLicenceContent()
+        return licenceLoadedMsg{content: content, err: err}
 	}
 }
 
 // loadLicenceContent loads the license content from various sources
 func loadLicenceContent() (string, error) {
-	// Try to load from local LICENSE file first
-	execPath, err := os.Executable()
-	if err == nil {
-		projectRoot := filepath.Dir(execPath)
-		localLicencePath := filepath.Join(projectRoot, "LICENSE")
-		if data, err := os.ReadFile(localLicencePath); err == nil {
-			return string(data), nil
-		}
-	}
-
-	// Try from current working directory
-	if data, err := os.ReadFile("LICENSE"); err == nil {
-		return string(data), nil
-	}
-
-	// Try to fetch from GitHub
-	githubURL := "https://raw.githubusercontent.com/DavidBachDerEchte/bubble-jira/main/LICENSE"
-	resp, err := http.Get(githubURL)
-	if err == nil && resp.StatusCode == http.StatusOK {
-		defer resp.Body.Close()
-		if data, err := io.ReadAll(resp.Body); err == nil {
-			return string(data), nil
-		}
-	}
-
-	return "License file not found. Please ensure LICENSE file exists in the project root or is available on GitHub.", nil
+	if len(licenseContent) == 0 {
+        return "Embedded LICENSE file not found or is empty.", fmt.Errorf("embedded license is empty")
+    }
+    return string(licenseContent), nil
 }
 
  // hoverTimeoutCmd erstellt einen Command für den Hover-Timer
