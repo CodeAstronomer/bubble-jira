@@ -629,11 +629,15 @@ func (m model) updateConfigList(msg tea.Msg) (tea.Model, tea.Cmd) {
             switch field.key {
             case "SettingsGitIssueKeyLocation":
                 m.state = "issue-git-location"
-                m.gitIssueLoc.cursor = 0 // default selection
+                m.gitIssueLoc.cursor = 0
                 return m, nil
             case "SettingsGitIssueKeyStyle":
                 m.state = "issue-git-style"
-                m.gitIssueStyle.cursor = 0 // default selection
+                m.gitIssueStyle.cursor = 0
+                return m, nil
+            case "SettingsLanguage":
+                m.state = "select-Language"
+                m.ChooseLanguage.cursor = 0
                 return m, nil
             default:
                 m.configInput = newConfigInputEditor(field.key, field.value)
@@ -694,28 +698,6 @@ func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
                 m.configList.fields[m.editingFieldIdx].value = value
 
                 m.updateConfigFields()
-
-                if m.editingMode == "config" && m.configInput.key == "language" {
-                    if !languageRegex.MatchString(value) {
-                        m.configInput.focusSave = true
-                        return m, nil
-                    }
-                    isAllowed := false
-                    for _, lang := range allowedLanguages {
-                        if value == lang {
-                            isAllowed = true
-                            break
-                        }
-                    }
-                    if !isAllowed {
-                        m.configInput.focusSave = true
-                        return m, nil
-                    }
-
-                    Lang = value
-                    loadStrings(Lang)
-                    m.configValidError = ""
-                }
 
                 if m.editingMode == "keybindings" {
                     m.configList = newKeybindingEditor(m.cfg)
@@ -1009,6 +991,14 @@ func (m *model) initGitInputs() {
         m.gitIssueStyle.choice = ""
         m.gitIssueStyle.focusSave = false
     }
+
+    if m.ChooseLanguage.input.Placeholder == "" {
+        m.ChooseLanguage.input = textinput.New()
+        m.ChooseLanguage.input.Placeholder = "Enter Language..."
+        m.ChooseLanguage.cursor = 0
+        m.ChooseLanguage.choice = ""
+        m.ChooseLanguage.focusSave = false
+    }
 }
 
 func (m model) updateIssueGitLocation(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -1127,6 +1117,65 @@ func (m model) updateIssueGitStyle(msg tea.Msg) (tea.Model, tea.Cmd) {
         if !m.gitIssueStyle.focusSave {
             var cmd tea.Cmd
             m.configInput.input, cmd = m.gitIssueStyle.input.Update(msg)
+            return m, cmd
+        }
+    }
+	return m, nil
+}
+
+func (m model) updateChooseLanguage(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch {
+		case msg.String() == keyDown:
+			if !m.ChooseLanguage.focusSave {
+				m.ChooseLanguage.cursor++
+				if m.ChooseLanguage.cursor >= len(allowedLanguages) {
+					m.ChooseLanguage.cursor = 0
+				}
+			} else {
+				m.ChooseLanguage.focusSave = false
+			}
+			return m, nil
+
+		case msg.String() == keyUp:
+			if !m.ChooseLanguage.focusSave {
+				m.ChooseLanguage.cursor--
+				if m.ChooseLanguage.cursor < 0 {
+					m.ChooseLanguage.cursor = len(allowedLanguages) - 1
+				}
+			} else {
+				m.ChooseLanguage.focusSave = false
+			}
+			return m, nil
+
+		case msg.String() == keyEnter:
+            m.ChooseLanguage.choice = allowedLanguages[m.ChooseLanguage.cursor]
+            m.cfg.Lang = m.ChooseLanguage.choice
+
+            if err := config.Save(m.cfg); err != nil {
+                m.statusMessage = "Failed to save config!"
+                fmt.Printf("Failed to save config: %v\n", err)
+                return m, nil
+            }
+
+
+            loadStrings(m.ChooseLanguage.choice)
+
+            m.configList = newConfigListEditor(m.cfg)
+            m.state = "config"
+            return m, nil
+
+		default:
+			if contains(exitKeys, msg.String()) {
+				m.state = "config"
+				return m, nil
+			}
+		}
+
+        if !m.ChooseLanguage.focusSave {
+            var cmd tea.Cmd
+            m.configInput.input, cmd = m.ChooseLanguage.input.Update(msg)
             return m, cmd
         }
     }

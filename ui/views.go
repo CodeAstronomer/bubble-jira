@@ -93,10 +93,6 @@ func (m model) configInputView() string {
 	content.Grow(256) // Pre-allocate buffer
 	content.WriteString(Strings["Edit"])
 	content.WriteString(m.configInput.key)
-	if m.configInput.key == "language" {
-	    content.WriteString("\n"+ lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("Only in this format: de-DE"))
-	    content.WriteString("\n"+ lipgloss.NewStyle().Render("You can choose between these languages: " + strings.Join(allowedLanguages, ", ")))
-	}
 	content.WriteString("\n\n")
 	content.WriteString(m.configInput.input.View())
 	content.WriteString("\n\n")
@@ -252,6 +248,31 @@ func (m model) issueGitStyle() string {
 			content.WriteString(Strings["posFalse"])
 		}
 		content.WriteString(style)
+		content.WriteString("\n")
+	}
+
+    // Footer
+    footer := lipgloss.NewStyle().Faint(true).Render(
+        keyMap[keyUp]+"/"+keyMap[keyDown]+": "+Strings["Navigate"]+"  • "+
+            keyMap[keyEnter]+": "+Strings["Confirm"]+" • "+
+            keyExitKeysStr+": "+Strings["Cancel"],
+    )
+
+    return m.centralLayout(content.String(), footer)
+}
+
+func (m model) selectLanguage() string {
+	var content strings.Builder
+	content.Grow(256)
+	content.WriteString(Strings["ChooseLanguages"])
+
+	for i, chooseLanguages := range allowedLanguages {
+		if m.ChooseLanguage.cursor == i {
+			content.WriteString(Strings["posTrue"])
+		} else {
+			content.WriteString(Strings["posFalse"])
+		}
+		content.WriteString(chooseLanguages)
 		content.WriteString("\n")
 	}
 

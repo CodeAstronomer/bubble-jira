@@ -47,7 +47,7 @@ func newConfigListEditor(cfg *config.Config) configListEditor {
         {key: "jql", displayKey: Strings["SettingsConfigJQL"], value: cfg.JQL},
 		{key: "SettingsGitIssueKeyLocation", displayKey: Strings["SettingsConfigGitIssueKeyLocation"], value: keyLeftRightMap[cfg.IssueKeyLoc]},
         {key: "SettingsGitIssueKeyStyle", displayKey: Strings["SettingsConfigGitIssueKeyStyle"], value: keyWrapperMap[cfg.IssueKeyStyle]},
-		{key: "language", displayKey: Strings["language"], value: cfg.Lang},
+		{key: "SettingsLanguage", displayKey: Strings["language"], value: cfg.Lang},
 	}
 
 	items := make([]list.Item, len(fields))

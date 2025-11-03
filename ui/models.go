@@ -85,6 +85,12 @@ type model struct {
         cursor   int
         choice   string
     }
+    ChooseLanguage struct {
+        input    textinput.Model
+        focusSave bool
+        cursor   int
+        choice   string
+    }
     taskSearchInput  textinput.Model
     originalTaskRows []table.Row
 }
@@ -244,6 +250,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         return m.updateIssueGitLocation(msg)
     case "issue-git-style":
         return m.updateIssueGitStyle(msg)
+    case "select-Language":
+        return m.updateChooseLanguage(msg)
 	default:
 		return m, nil
 	}
@@ -290,6 +298,8 @@ func (m model) View() string {
         return m.issueGitLocation()
     case "issue-git-style":
         return m.issueGitStyle()
+    case "select-Language":
+        return m.selectLanguage()
 	default:
 		return "Unknown state"
 	}

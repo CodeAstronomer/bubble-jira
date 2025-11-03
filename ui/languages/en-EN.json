@@ -61,6 +61,7 @@
   "SelectLocation": "\n\nChoose Location\n",
   "ChooseIssueGitLocation": "Choose whether the task key should appear before or after the commit message. \n\n",
   "ChooseIssueGitStyle": "Choose how the task key should look. \n\n",
+  "ChooseLanguages": "Choose Language \n\n",
 
   "posTrue": "(•) ",
   "posFalse": "( ) ",

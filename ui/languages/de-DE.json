@@ -61,6 +61,7 @@
   "SelectLocation": "\n\nAusrichtung auswählen\n",
   "ChooseIssueGitLocation": "Wähle aus ob der Task Key vor oder nach der Commit Message stehen soll. \n\n",
   "ChooseIssueGitStyle": "Wähle aus wie der Task Key ausschauen soll. \n\n",
+  "ChooseLanguages": "Sprache auswählen \n\n",
 
   "posTrue": "(•) ",
   "posFalse": "( ) ",
