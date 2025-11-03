@@ -8,7 +8,7 @@ import (
 // licenceView renders the licence view
 func (m model) licenceView() string {
     if m.licenceLoading {
-        return "Loading licence..."
+        return Strings["LoadLicense"]
     }
 
     lines := strings.Split(m.licenceContent, "\n")
@@ -29,7 +29,7 @@ func (m model) licenceView() string {
     visible := lines[m.licenceOffset:end]
 
     content := strings.Join(visible, "\n")
-    footer := lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": scroll • "+ keyMap[keyFastUp]+"/"+ keyMap[keyFastDown] +": fast-scroll • "+ keyExitKeysStr +": back")
+    footer := lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": "+Strings["Scroll"]+" • "+ keyMap[keyFastUp]+"/"+ keyMap[keyFastDown] +": "+Strings["FastScroll"]+" • "+ keyExitKeysStr +": "+Strings["Back"])
 
     // Render with terminal width and height, but no forced wrapping
     return lipgloss.NewStyle().
@@ -44,7 +44,7 @@ func (m model) tasksTableView() string {
 	content.Grow(512)
 	content.WriteString(tableBaseStyle.Render(m.tasksTable.View()))
 	content.WriteString("\n")
-	content.WriteString(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": navigate • ␣: comments • " + keyMap[keyEnter] +": select • "+keySearch+": search • "+ keyExitKeysStr +": back"))
+	content.WriteString(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": "+Strings["Navigate"]+" • ␣: "+Strings["Comments"]+" • " + keyMap[keyEnter] +": "+Strings["Select"]+" • "+keySearch+": "+Strings["Search"]+" • "+ keyExitKeysStr +": "+Strings["Back"]))
 	return content.String()
 }
 
@@ -77,7 +77,7 @@ func (m model) commentsView() string {
 	content.WriteString(m.commentsViewport.View())
 
     // Footer
-    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": scroll • "+ keyNewComment +": Add Comment • "+ keyExitKeysStr +": back"))
+    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": "+Strings["Scroll"]+" • "+ keyNewComment +": "+Strings["AddComment"]+" • "+ keyExitKeysStr +": "+Strings["Back"]))
 
     return m.centralLayout(content.String(), footer)
 }
@@ -91,7 +91,7 @@ func (m model) configListView() string {
 func (m model) configInputView() string {
 	var content strings.Builder
 	content.Grow(256) // Pre-allocate buffer
-	content.WriteString("Editing: ")
+	content.WriteString(Strings["Edit"])
 	content.WriteString(m.configInput.key)
 	if m.configInput.key == "language" {
 	    content.WriteString("\n"+ lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("Only in this format: de-DE"))
@@ -110,8 +110,8 @@ func (m model) configInputView() string {
 
     // Footer
     footer := lipgloss.NewStyle().Faint(true).Render(
-        keyMap[keyUp]+"/"+keyMap[keyDown]+": navigate • "+
-            keyMap[keyEnter]+": confirm • esc: cancel",
+        keyMap[keyUp]+"/"+keyMap[keyDown]+": "+Strings["Navigate"]+" • "+
+            keyMap[keyEnter]+": "+Strings["Confirm"]+"  • esc: "+Strings["Cancel"],
     )
 
     return m.centralLayout(content.String(), footer)
@@ -133,14 +133,14 @@ func (m model) taskStatusView() string {
 	var content strings.Builder
 	content.Grow(256)
 
-	content.WriteString("🪶 Choose Task Status\n\n")
-	content.WriteString("\n\nSelect Status:\n")
+	content.WriteString(Strings["ChooseTaskStatus"])
+	content.WriteString(Strings["SelectStatus"])
 
 	for i, status := range statuses {
 		if m.jiraStatusInput.cursor == i {
-			content.WriteString("(•) ")
+			content.WriteString(Strings["posTrue"])
 		} else {
-			content.WriteString("( ) ")
+			content.WriteString(Strings["posFalse"])
 		}
 		content.WriteString(status)
 		content.WriteString("\n")
@@ -148,9 +148,9 @@ func (m model) taskStatusView() string {
 
     // Footer
     footer := lipgloss.NewStyle().Faint(true).Render(
-        keyMap[keyUp]+"/"+keyMap[keyDown]+": navigate • "+
-            keyMap[keyEnter]+": confirm • "+
-            keyExitKeysStr+": cancel",
+        keyMap[keyUp]+"/"+keyMap[keyDown]+": "+Strings["Navigate"]+" • "+
+            keyMap[keyEnter]+": "+Strings["Confirm"]+"  • "+
+            keyExitKeysStr+": "+Strings["Cancel"],
     )
 
     return m.centralLayout(content.String(), footer)
@@ -161,7 +161,7 @@ func (m model) addCommentView() string {
     var content strings.Builder
     content.Grow(512)
 
-    content.WriteString("Add a comment (max 1000 chars):\n\n")
+    content.WriteString(Strings["AddCommentHeader"])
     content.WriteString(m.addCommentInput.input.View())
     content.WriteString("\n\n")
 
@@ -174,7 +174,7 @@ func (m model) addCommentView() string {
 
     // Footer
     parts := strings.Split(keyExitKeysStr, "/")
-    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": navigate • "+ keyMap[keyEnter] +": Send • "+ parts[1] +": cancel"))
+    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": "+Strings["Navigate"]+" • "+ keyMap[keyEnter] +": "+ Strings["Send"] +" • "+ parts[1] +": "+Strings["Cancel"]))
 
     return m.centralLayout(content.String(), footer)
 }
@@ -184,8 +184,8 @@ func (m model) enterCommitMessage() string {
     var content strings.Builder
     content.Grow(512)
 
-    content.WriteString("Add a Commit Message (max 1000 chars):\n")
-    content.WriteString("\n"+ lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("DO NOT Type [XXX-XXXX], it is already added to the final comment. \n"))
+    content.WriteString(Strings["AddCommitHeader"])
+    content.WriteString("\n"+ lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render(Strings["CommitNotice"]))
     content.WriteString("\n" + m.commitGitMessage.input.View())
     content.WriteString("\n\n")
 
@@ -198,7 +198,7 @@ func (m model) enterCommitMessage() string {
 
     // Footer
     parts := strings.Split(keyExitKeysStr, "/")
-    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": navigate • "+ keyMap[keyEnter] +": Copy Full Command • "+ parts[1] +": cancel"))
+    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": "+Strings["Navigate"]+" • "+ keyMap[keyEnter] +": Copy Full Command • "+ parts[1] +": "+Strings["Cancel"]))
 
     return m.centralLayout(content.String(), footer)
 }
@@ -211,14 +211,14 @@ func (m model) issueGitLocation() string {
 	var content strings.Builder
 	content.Grow(256)
 
-	content.WriteString("Choose Jira Issue Key Git Location\n\n")
-	content.WriteString("\n\nSelect Location:\n")
+	content.WriteString(Strings["ChooseIssueGitLocation"])
+	content.WriteString(Strings["SelectLocation"])
 
 	for i, position := range pos {
 		if m.gitIssueLoc.cursor == i {
-			content.WriteString("(•) ")
+			content.WriteString(Strings["posTrue"])
 		} else {
-			content.WriteString("( ) ")
+			content.WriteString(Strings["posFalse"])
 		}
 		content.WriteString(position)
 		content.WriteString("\n")
@@ -226,9 +226,9 @@ func (m model) issueGitLocation() string {
 
     // Footer
     footer := lipgloss.NewStyle().Faint(true).Render(
-        keyMap[keyUp]+"/"+keyMap[keyDown]+": navigate • "+
-            keyMap[keyEnter]+": confirm • "+
-            keyExitKeysStr+": cancel",
+        keyMap[keyUp]+"/"+keyMap[keyDown]+": "+Strings["Navigate"]+" • "+
+            keyMap[keyEnter]+": "+Strings["Confirm"]+"  • "+
+            keyExitKeysStr+": "+Strings["Cancel"],
     )
 
     return m.centralLayout(content.String(), footer)
@@ -242,14 +242,14 @@ func (m model) issueGitStyle() string {
 	var content strings.Builder
 	content.Grow(256)
 
-	content.WriteString("Choose Jira Issue Key Git Style\n\n")
-	content.WriteString("\n\nSelect Style:\n")
+	content.WriteString(Strings["ChooseIssueGitStyle"])
+	content.WriteString(Strings["SelectStyle"])
 
 	for i, style := range styles {
 		if m.gitIssueStyle.cursor == i {
-			content.WriteString("(•) ")
+			content.WriteString(Strings["posTrue"])
 		} else {
-			content.WriteString("( ) ")
+			content.WriteString(Strings["posFalse"])
 		}
 		content.WriteString(style)
 		content.WriteString("\n")
@@ -257,9 +257,9 @@ func (m model) issueGitStyle() string {
 
     // Footer
     footer := lipgloss.NewStyle().Faint(true).Render(
-        keyMap[keyUp]+"/"+keyMap[keyDown]+": navigate • "+
-            keyMap[keyEnter]+": confirm • "+
-            keyExitKeysStr+": cancel",
+        keyMap[keyUp]+"/"+keyMap[keyDown]+": "+Strings["Navigate"]+"  • "+
+            keyMap[keyEnter]+": "+Strings["Confirm"]+" • "+
+            keyExitKeysStr+": "+Strings["Cancel"],
     )
 
     return m.centralLayout(content.String(), footer)
@@ -279,7 +279,7 @@ func (m model) taskSearchView() string {
 	content.WriteString("\n")
 
 	// Render help
-	footer := lipgloss.NewStyle().Faint(true).Render("esc: cancel search • " + keyMap[keyEnter] + ": confirm search and exit")
+	footer := lipgloss.NewStyle().Faint(true).Render("esc: "+Strings["Cancel"]+" • " + keyMap[keyEnter] + ": "+Strings["Confirm"]+" & "+Strings["Cancel"])
 	content.WriteString(footer)
 
 	return content.String()
