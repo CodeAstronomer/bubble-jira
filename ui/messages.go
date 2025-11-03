@@ -4,7 +4,7 @@ package ui
 import (
 	"time"
 
-	"bubble-jira/jira"
+	"bubble-jira/jira-code"
 )
 
 // issuesFetchedMsg message for when issues are fetched

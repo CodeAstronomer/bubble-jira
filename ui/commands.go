@@ -6,7 +6,7 @@ import (
     "time"
     "fmt"
 
-	"bubble-jira/jira"
+	"bubble-jira/jira-code"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

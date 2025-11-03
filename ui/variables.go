@@ -24,7 +24,7 @@ func getTerminalSize() (int, int) {
 }
 
 // AppVersion stays constant
-const AppVersion = "1.0.0"
+const AppVersion = "1.0.1"
 
 // Initialize everything that depends on terminal size
 var (

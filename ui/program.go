@@ -4,7 +4,7 @@ import (
     "fmt"
     "os"
 
-	"bubble-jira/jira"
+	"bubble-jira/jira-code"
 	"bubble-jira/config"
 
     "github.com/charmbracelet/bubbles/list"

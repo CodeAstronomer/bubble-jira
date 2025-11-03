@@ -6,7 +6,7 @@ import (
 	"flag"
 
 	"bubble-jira/config"
-	"bubble-jira/jira"
+	"bubble-jira/jira-code"
 	"bubble-jira/ui"
 )
 

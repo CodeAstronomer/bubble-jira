@@ -2,7 +2,7 @@ package ui
 
 import (
 	"bubble-jira/config"
-	"bubble-jira/jira"
+	"bubble-jira/jira-code"
 	"time"
 
 	"github.com/charmbracelet/bubbles/list"

@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"bubble-jira/jira"
+	"bubble-jira/jira-code"
 	"bubble-jira/config"
     "fmt"
     "time"

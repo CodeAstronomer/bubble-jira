@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"bubble-jira/jira"
+	"bubble-jira/jira-code"
 	"encoding/json"
 	"strings"
 	"time"
