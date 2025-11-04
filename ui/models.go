@@ -40,6 +40,7 @@ type model struct {
 	licenceLoading   bool
 	licenceOffset    int
 	comments         []jira.Comment
+	issueDescription string
 	commentsLoading  bool
 	screenWidth      int
 	screenHeight     int
@@ -47,6 +48,7 @@ type model struct {
 	hoverTimer       *time.Timer
     hoveredTaskKey   string
     cachedComments   map[string][]jira.Comment
+    cachedDescriptions map[string]string
     fetchingComments bool
     statusMessage    string
     isFromAddComments bool
@@ -181,6 +183,7 @@ func newModel(cfg *config.Config, jc *jira.Client) model {
 		screenWidth:      terminalWidth,
 		screenHeight:     terminalHeight,
 		cachedComments:   make(map[string][]jira.Comment),
+		cachedDescriptions: make(map[string]string),
         fetchingComments: false,
         hoverTimer:       nil,
         hoveredTaskKey:   "",

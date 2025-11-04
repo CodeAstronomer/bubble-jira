@@ -29,10 +29,11 @@ func fetchJiraTasksCmd(jc *jira.Client) tea.Cmd {
 // fetchCommentsCmd creates a command to fetch comments for an issue
 func fetchCommentsCmd(jc *jira.Client, issueKey string) tea.Cmd {
     return func() tea.Msg {
-        comments, err := jc.FetchComments(context.Background(), issueKey)
+        comments, description, err := jc.FetchComments(context.Background(), issueKey)
         return commentsFetchedMsg{
             taskKey:  issueKey,
             comments: comments,
+            description: description,
             err:      err,
         }
     }
@@ -89,10 +90,11 @@ func hoverTimeoutCmd(taskKey string, duration time.Duration) tea.Cmd {
 // fetchCommentsBackgroundCmd fetched Comments im Hintergrund für Caching
 func fetchCommentsBackgroundCmd(jc *jira.Client, taskKey string) tea.Cmd {
     return func() tea.Msg {
-        comments, err := jc.FetchComments(context.Background(), taskKey)
+        comments, description, err := jc.FetchComments(context.Background(), taskKey)
         return commentsCachedMsg{
             taskKey:  taskKey,
             comments: comments,
+            description: description,
             err:      err,
         }
     }

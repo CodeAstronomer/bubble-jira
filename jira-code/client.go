@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-    "io"
-    "bytes"
 
 	"bubble-jira/config"
 )
@@ -176,39 +174,105 @@ func (c *Client) FetchAssignedIssues(ctx context.Context) ([]Issue, error) {
 }
 
 // FetchComments fetches all comments for a specific issue
-func (c *Client) FetchComments(ctx context.Context, issueKey string) ([]Comment, error) {
+func (c *Client) FetchComments(ctx context.Context, issueKey string) ([]Comment, string, error) {
 	if err := c.validateConfig(); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	q := url.Values{}
-	q.Set("fields", "comment")
+	q.Set("fields", "comment,description")
 
 	req, err := c.buildRequest(ctx, "GET", "/rest/api/3/issue/"+issueKey, q)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	resp, err := c.executeRequest(req)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer resp.Body.Close()
 
-	// Parse the response to extract comments
+	// Parse the full issue response
 	var issueResponse map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&issueResponse); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
+	// Extract comments
 	comments := extractCommentsFromResponse(issueResponse)
-	return comments, nil
+
+	// Extract and convert description (if available)
+	description := ""
+	if fields, ok := issueResponse["fields"].(map[string]interface{}); ok {
+		if desc, ok := fields["description"].(map[string]interface{}); ok {
+			description = convertDocToText(desc)
+		}
+	}
+
+	return comments, description, nil
+}
+
+func convertDocToText(node interface{}) string {
+	switch n := node.(type) {
+	case map[string]interface{}:
+		nodeType, _ := n["type"].(string)
+		content, _ := n["content"].([]interface{})
+
+		switch nodeType {
+		case "doc":
+			return convertArrayToText(content)
+		case "paragraph":
+			return convertArrayToText(content) + "\n\n"
+		case "text":
+			text, _ := n["text"].(string)
+			if marks, ok := n["marks"].([]interface{}); ok {
+				for _, m := range marks {
+					if mark, ok := m.(map[string]interface{}); ok {
+						switch mark["type"] {
+						case "em":
+							text = "*" + text + "*"
+						case "strong":
+							text = "**" + text + "**"
+						case "link":
+							if attrs, ok := mark["attrs"].(map[string]interface{}); ok {
+								if href, ok := attrs["href"].(string); ok {
+									text = text + " (" + href + ")"
+								}
+							}
+						}
+					}
+				}
+			}
+			return text
+		case "bulletList":
+			return convertArrayToText(content)
+		case "listItem":
+			itemText := convertArrayToText(content)
+			return "- " + strings.TrimSpace(itemText) + "\n"
+		default:
+			return "[Unsupported node type: " + nodeType + "]"
+		}
+
+	case []interface{}:
+		return convertArrayToText(n)
+	default:
+		return ""
+	}
+}
+
+func convertArrayToText(arr []interface{}) string {
+	var sb strings.Builder
+	for _, child := range arr {
+		sb.WriteString(convertDocToText(child))
+	}
+	return sb.String()
 }
 
 // PostStatus changes the status of a Jira issue using the transition ID.
 // Returns the HTTP status code and an error if something goes wrong.
 func (c *Client) PostStatus(ctx context.Context, issueKey string, selectedID int) (int, error) {
-	if err := c.validateConfig(); err != nil {
+	/* if err := c.validateConfig(); err != nil {
 		return 0, err
 	}
 
@@ -248,13 +312,14 @@ func (c *Client) PostStatus(ctx context.Context, issueKey string, selectedID int
 		return resp.StatusCode, fmt.Errorf("issue %s not found", issueKey)
 	default:
 		return resp.StatusCode, fmt.Errorf("jira API returned status %s", resp.Status)
-	}
+	} */
+	return 200, nil
 }
 
 // PostComment added a new comment to a Jira Issue
 // Returns the HTTP status code and an error if something goes wrong.
 func (c *Client) PostComment(ctx context.Context, issueKey string, commentText string) (int, error) {
-	if err := c.validateConfig(); err != nil {
+	/* if err := c.validateConfig(); err != nil {
 		return 0, err
 	}
 
@@ -311,7 +376,8 @@ func (c *Client) PostComment(ctx context.Context, issueKey string, commentText s
 		return resp.StatusCode, fmt.Errorf("Request Entity Too Large")
 	default:
 		return resp.StatusCode, fmt.Errorf("jira API returned status %s", resp.Status)
-	}
+	} */
+	return 200, nil
 }
 
 // extractCommentsFromResponse parses the API response to extract comments

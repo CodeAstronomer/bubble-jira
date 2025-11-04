@@ -17,6 +17,7 @@ type issuesFetchedMsg struct {
 type commentsFetchedMsg struct {
     taskKey  string
     comments []jira.Comment
+    description string
     err      error
 }
 
@@ -35,6 +36,7 @@ type hoverTimeoutMsg struct {
 type commentsCachedMsg struct {
     taskKey  string
     comments []jira.Comment
+    description string
     err      error
 }
 

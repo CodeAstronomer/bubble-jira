@@ -269,6 +269,7 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
         m.fetchingComments = false
         if msg.err == nil {
             m.cachedComments[msg.taskKey] = msg.comments
+            m.cachedDescriptions[msg.taskKey] = msg.description
         }
         return m, nil
 
@@ -313,20 +314,28 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
 
                 if cachedComments, exists := m.cachedComments[key]; exists {
                     m.comments = cachedComments
+                    if cachedDesc, descExists := m.cachedDescriptions[key]; descExists {
+                        m.issueDescription = cachedDesc
+                    } else {
+                        m.issueDescription = ""
+                    }
                     m.commentsLoading = false
 
-                    markdownContent := renderCommentsToMarkdown(m.comments)
+                    markdownContent := "**"+Strings["Description"]+"**\n\n" + m.issueDescription + "\n\n------"+"\n\n**"+Strings["Comments"]+"**\n\n" + renderCommentsToMarkdown(m.comments)
+
                     renderer, err := glamour.NewTermRenderer(
                         glamour.WithAutoStyle(),
                         glamour.WithWordWrap(m.screenWidth-4),
                     )
                     if err != nil {
+                        m.issueDescription = ""
                         m.state = "tasks"
                         return m, nil
                     }
 
                     renderedContent, err := renderer.Render(markdownContent)
                     if err != nil {
+                        m.issueDescription = ""
                         m.state = "tasks"
                         return m, nil
                     }
@@ -516,9 +525,13 @@ func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		m.comments = msg.comments
+		m.issueDescription = msg.description
 		m.commentsLoading = false
 
-		markdownContent := renderCommentsToMarkdown(m.comments)
+		m.cachedComments[msg.taskKey] = msg.comments
+        m.cachedDescriptions[msg.taskKey] = msg.description
+
+		markdownContent := "**"+Strings["Description"]+"**\n\n" + m.issueDescription + "\n\n------"+"\n\n**"+Strings["Comments"]+"**\n\n" + renderCommentsToMarkdown(m.comments)
 
 		renderer, err := glamour.NewTermRenderer(
 			glamour.WithAutoStyle(),
@@ -557,6 +570,7 @@ func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if contains(exitKeys, msg.String()) {
 			m.state = "tasks"
+			m.issueDescription = ""
 		}
 	}
 
@@ -864,6 +878,7 @@ func (m model) updateAddCommentInput(msg tea.Msg) (tea.Model, tea.Cmd) {
 
         case contains(exitKeys, msg.String()):
             m.state = "tasks"
+            m.issueDescription = ""
             return m, nil
         }
 
