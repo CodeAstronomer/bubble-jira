@@ -5,11 +5,11 @@
 set -euo pipefail
 
 # App-specific variables
-APP_NAME="bubble-jira"      # Public name for installer, final binary, etc.
+APP_NAME="bubble-jira"      # Public name for installer, final binary, etc. -> jira
 BUILD_OUTPUT_NAME="jira"  # The name of the binary right after compilation
 MAIN_GO="main.go"
-PKG_ID="com.bubble-jira.cli"
-STAGING_DIR="${APP_NAME}-pkg" # e.g., "bubble-jira-pkg"
+PKG_ID="com.bubble-jira.cli" # For Production -> com.jira.cli
+STAGING_DIR="${APP_NAME}-pkg" # e.g., "bubble-jira-pkg" -> jira-pkg
 
 # ANSI Color Codes
 GREEN="\033[0;32m"

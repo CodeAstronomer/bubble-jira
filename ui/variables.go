@@ -45,6 +45,7 @@ var (
 	style2              = "(XXX-XXXX)"
 	allowedLanguages    = []string{"de-DE", "en-EN"}
     languageRegex       = regexp.MustCompile(`^[a-z]{2}-[A-Z]{2}$`)
+    statuses            []string
 
 	exitKeys        []string
     keyExitKeysStr  string
@@ -90,6 +91,18 @@ func Init() {
     exitKeys, keyExitKeysStr, keyUp, keyDown, keyFastUp, keyFastDown, keyEnter, keyNewComment, keySearch, keyForceQuit = cfg.GetKeys()
 
 	loadStrings(Lang)
+
+	statuses = []string{
+        Strings["Open"],
+        Strings["CurrentlyInProgress"],
+        Strings["Done"],
+        Strings["Reopened"],
+        Strings["Closed"],
+        Strings["Backlog"],
+        Strings["QM"],
+        Strings["Waiting"],
+        Strings["Staging"],
+    }
 
 	// Initialize Jira status map dynamically using Strings
 	JiraStatusMap = map[string]int{

@@ -115,17 +115,6 @@ func (m model) configInputView() string {
 
 // taskStatusView
 func (m model) taskStatusView() string {
-    var statuses = []string{
-    	Strings["Open"],
-    	Strings["CurrentlyInProgress"],
-    	Strings["Done"],
-    	Strings["Reopened"],
-    	Strings["Closed"],
-    	Strings["Backlog"],
-    	Strings["QM"],
-    	Strings["Waiting"],
-    	Strings["Staging"],
-    }
 	var content strings.Builder
 	content.Grow(256)
 

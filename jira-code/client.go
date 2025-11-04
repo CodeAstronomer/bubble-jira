@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+    "io"
+    "bytes"
 
 	"bubble-jira/config"
 )
@@ -206,7 +208,7 @@ func (c *Client) FetchComments(ctx context.Context, issueKey string) ([]Comment,
 // PostStatus changes the status of a Jira issue using the transition ID.
 // Returns the HTTP status code and an error if something goes wrong.
 func (c *Client) PostStatus(ctx context.Context, issueKey string, selectedID int) (int, error) {
-	/*  if err := c.validateConfig(); err != nil {
+	if err := c.validateConfig(); err != nil {
 		return 0, err
 	}
 
@@ -246,14 +248,13 @@ func (c *Client) PostStatus(ctx context.Context, issueKey string, selectedID int
 		return resp.StatusCode, fmt.Errorf("issue %s not found", issueKey)
 	default:
 		return resp.StatusCode, fmt.Errorf("jira API returned status %s", resp.Status)
-	} */
-	return 200, nil
+	}
 }
 
 // PostComment added a new comment to a Jira Issue
 // Returns the HTTP status code and an error if something goes wrong.
 func (c *Client) PostComment(ctx context.Context, issueKey string, commentText string) (int, error) {
-	/* if err := c.validateConfig(); err != nil {
+	if err := c.validateConfig(); err != nil {
 		return 0, err
 	}
 
@@ -310,8 +311,7 @@ func (c *Client) PostComment(ctx context.Context, issueKey string, commentText s
 		return resp.StatusCode, fmt.Errorf("Request Entity Too Large")
 	default:
 		return resp.StatusCode, fmt.Errorf("jira API returned status %s", resp.Status)
-	} */
-	return 200, nil
+	}
 }
 
 // extractCommentsFromResponse parses the API response to extract comments

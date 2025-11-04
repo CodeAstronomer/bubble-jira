@@ -781,18 +781,6 @@ func (m model) updateTaskSettings(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // updateTaskStatus
 func (m model) updateTaskStatus(msg tea.Msg) (tea.Model, tea.Cmd) {
-	statuses := []string{
-    	Strings["Open"],
-    	Strings["Backlog"],
-    	Strings["Reopened"],
-    	Strings["CurrentlyInProgress"],
-    	Strings["QM"],
-    	Strings["Done"],
-    	Strings["Closed"],
-    	Strings["Waiting"],
-    	Strings["Staging"],
-    }
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
