@@ -8,4 +8,5 @@ type KeyData struct {
 	Exit      string
 	Enter     string
 	Search    string
+	Comment   string
 }

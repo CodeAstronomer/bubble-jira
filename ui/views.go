@@ -5,17 +5,36 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// commentsView renders the comments view
-func (m model) commentsView() string {
+
+// taskStatusView
+/* func (m model) taskStatusView() string {
 	var content strings.Builder
-	content.Grow(m.screenWidth * 10)
-	content.WriteString(m.commentsViewport.View())
+	content.Grow(256)
+
+	content.WriteString(Strings["ChooseTaskStatus"])
+	content.WriteString(Strings["SelectStatus"])
+
+	for i, status := range statuses {
+		if m.jiraStatusInput.cursor == i {
+			content.WriteString(Strings["posTrue"])
+		} else {
+			content.WriteString(Strings["posFalse"])
+		}
+		content.WriteString(status)
+		content.WriteString("\n")
+	}
 
     // Footer
-    footer := lipgloss.NewStyle().Faint(true).Render(lipgloss.NewStyle().Faint(true).Render(keyMap[keyUp]+"/"+ keyMap[keyDown] +": "+Strings["Scroll"]+" • "+ keyNewComment +": "+Strings["AddComment"]+" • "+ keyExitKeysStr +": "+Strings["Back"]))
+    footer := lipgloss.NewStyle().Faint(true).Render(
+        keyMap[keyUp]+"/"+keyMap[keyDown]+": "+Strings["Navigate"]+" • "+
+            keyMap[keyEnter]+": "+Strings["Confirm"]+"  • "+
+            keyExitKeysStr+": "+Strings["Cancel"],
+    )
 
     return m.centralLayout(content.String(), footer)
-}
+} */
+
+
 
 
 
@@ -45,33 +64,7 @@ func (m model) configInputView() string {
     return m.centralLayout(content.String(), footer)
 }
 
-// taskStatusView
-func (m model) taskStatusView() string {
-	var content strings.Builder
-	content.Grow(256)
 
-	content.WriteString(Strings["ChooseTaskStatus"])
-	content.WriteString(Strings["SelectStatus"])
-
-	for i, status := range statuses {
-		if m.jiraStatusInput.cursor == i {
-			content.WriteString(Strings["posTrue"])
-		} else {
-			content.WriteString(Strings["posFalse"])
-		}
-		content.WriteString(status)
-		content.WriteString("\n")
-	}
-
-    // Footer
-    footer := lipgloss.NewStyle().Faint(true).Render(
-        keyMap[keyUp]+"/"+keyMap[keyDown]+": "+Strings["Navigate"]+" • "+
-            keyMap[keyEnter]+": "+Strings["Confirm"]+"  • "+
-            keyExitKeysStr+": "+Strings["Cancel"],
-    )
-
-    return m.centralLayout(content.String(), footer)
-}
 
 // addCommentView renders the Add Comment input view
 func (m model) addCommentView() string {

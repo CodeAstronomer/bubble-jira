@@ -239,6 +239,7 @@ func (m model) View() string {
         Exit:     keyExitKeysStr,
 		Enter:    keyEnter,
 		Search:   keySearch,
+		Comment:  keyNewComment,
     }
 
 	switch m.state {
@@ -277,7 +278,15 @@ func (m model) View() string {
 	case "comments-fetching":
 		return fetchingStyle.Render(views.FetchingView(m.fetching))
 	case "comments-view":
-		return m.commentsView()
+        viewData := types.CommentViewData{
+            CommentsViewPort:        m.commentsViewport.View(),
+			IsLoading:    m.commentsLoading,
+			ScreenHeight: m.screenHeight,
+			ScreenWidth:  m.screenWidth,
+			Keys:         keyData,
+			Strings:      Strings,
+		}
+		return menuStyle.Render(views.CommentsView(viewData))
 	case "config":
 		return configStyle.Render(views.ConfigListView(m.configList))
 	case "config-edit":
@@ -285,7 +294,16 @@ func (m model) View() string {
 	case "fetching":
 		return fetchingStyle.Render(views.FetchingView(m.fetching))
     case "task-status":
-        return fetchingStyle.Render(m.taskStatusView())
+        viewData := types.TaskStatusViewData{
+            IsLoading:    m.commentsLoading,
+            ScreenHeight: m.screenHeight,
+            ScreenWidth:  m.screenWidth,
+            Keys:         keyData,
+            Strings:      Strings,
+            Statuses:     statuses,
+			JiraStatusInput: m.jiraStatusInput.cursor,
+        }
+        return menuStyle.Render(views.TaskStatusView(viewData))
     case "task-settings-list":
         return menuStyle.Render(m.taskSettings.View())
     case "add-comment":
