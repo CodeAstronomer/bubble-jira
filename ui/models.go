@@ -3,11 +3,13 @@ package ui
 import (
 	"bubble-jira/config"
 	"bubble-jira/jira-code"
+	"bubble-jira/ui/views"
+	"bubble-jira/ui/types"
 	"time"
 
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/progress"
-	"github.com/charmbracelet/bubbles/spinner"
+
+
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -29,9 +31,9 @@ type model struct {
 	taskContextMenu  list.Model
 	taskSettings     list.Model
 	selectedIssue    *jira.Issue
-	configList       configListEditor
+	configList       types.ConfigListEditor
 	configInput      configInputEditor
-	fetching         fetchingModel
+	fetching         types.FetchingModel
 	commentsViewport viewport.Model
 	statusBar        string
 	editingFieldIdx  int
@@ -97,35 +99,9 @@ type model struct {
     originalTaskRows []table.Row
 }
 
-// fetchingModel represents the fetching state UI
-type fetchingModel struct {
-	spinner      spinner.Model
-	progress     progress.Model
-	stages       []string
-	currentStage int
-	fromStatus   bool
-	status       string
-	error        string
-	done         bool
-	width        int
-}
 
-// configListEditor handles config list editing
-type configListEditor struct {
-	fields []configField
-	list   list.Model
-}
 
-// configField represents a configuration field
-type configField struct {
-	key        string
-	displayKey string
-	value      string
-}
 
-func (cf configField) Title()       string { return cf.displayKey }
-func (cf configField) Description() string { return cf.value }
-func (cf configField) FilterValue() string { return cf.displayKey }
 
 // configInputEditor handles individual config field editing
 type configInputEditor struct {
@@ -144,14 +120,7 @@ func (m menuItem) Title() string       { return m.title }
 func (m menuItem) Description() string { return "" }
 func (m menuItem) FilterValue() string { return m.title }
 
-// contextMenuItem represents a context menu item
-type contextMenuItem struct {
-	title string
-}
 
-func (cm contextMenuItem) Title() string       { return cm.title }
-func (cm contextMenuItem) Description() string { return "" }
-func (cm contextMenuItem) FilterValue() string { return cm.title }
 
 // newModel creates the initial model state
 func newModel(cfg *config.Config, jc *jira.Client) model {
@@ -213,7 +182,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(
 			fetchJiraTasksCmd(m.jc),
 			tickFetchCmd(),
-			m.fetching.spinner.Tick,
+			m.fetching.Spinner.Tick,
 		)
 	}
 
@@ -262,6 +231,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the current view based on state
 func (m model) View() string {
+    keyData := types.KeyData{
+        Up:       keyUp,
+        Down:     keyDown,
+        FastUp:   keyFastUp,
+        FastDown: keyFastDown,
+        Exit:     keyExitKeysStr,
+		Enter:    keyEnter,
+		Search:   keySearch,
+    }
+
 	switch m.state {
 	case "menu":
 		view := m.menu.View()
@@ -272,21 +251,39 @@ func (m model) View() string {
 	case "settings":
 		return menuStyle.Render(m.settings.View())
 	case "licence":
-		return menuStyle.Render(m.licenceView())
+		viewData := types.LicenseViewData{
+			Content:      m.licenceContent,
+			IsLoading:    m.licenceLoading,
+			Offset:       m.licenceOffset,
+			ScreenHeight: m.screenHeight,
+			ScreenWidth:  m.screenWidth,
+			Keys:         keyData,
+			Strings:      Strings,
+		}
+		return menuStyle.Render(views.LicenseView(viewData))
 	case "tasks":
-		return tasksStyle.Render(m.tasksTableView())
+		viewData := types.TasksListData{
+			TasksTable:     m.tasksTable,
+			TableBaseStyle: tableBaseStyle,
+			Keys:           keyData,
+			Strings:        Strings,
+		}
+		return tasksStyle.Render(views.TasksTableView(viewData))
 	case "task-context":
-		return tasksStyle.Render(m.taskContextView())
+		viewData := types.TaskContextViewData{
+			Menu: m.taskContextMenu,
+		}
+		return tasksStyle.Render(views.TaskContextView(viewData))
 	case "comments-fetching":
-		return fetchingStyle.Render(m.fetchingView())
+		return fetchingStyle.Render(views.FetchingView(m.fetching))
 	case "comments-view":
 		return m.commentsView()
 	case "config":
-		return configStyle.Render(m.configListView())
+		return configStyle.Render(views.ConfigListView(m.configList))
 	case "config-edit":
 		return configStyle.Render(m.configInputView())
 	case "fetching":
-		return fetchingStyle.Render(m.fetchingView())
+		return fetchingStyle.Render(views.FetchingView(m.fetching))
     case "task-status":
         return fetchingStyle.Render(m.taskStatusView())
     case "task-settings-list":
@@ -296,7 +293,15 @@ func (m model) View() string {
     case "enter-commit-message":
         return m.enterCommitMessage()
     case "task-search":
-        return m.taskSearchView()
+		viewData := types.TaskSearchViewData{
+			TaskSearchInput: m.taskSearchInput,
+			TasksTable:      m.tasksTable,
+			TableBaseStyle:  tableBaseStyle,
+			Strings:         Strings,
+			KeyMap:          keyMap,
+			KeyEnter:        keyEnter,
+		}
+		return views.TaskSearchView(viewData)
     case "issue-git-location":
         return m.issueGitLocation()
     case "issue-git-style":

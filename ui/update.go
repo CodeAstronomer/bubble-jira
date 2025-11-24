@@ -3,10 +3,11 @@ package ui
 import (
 	"bubble-jira/jira-code"
 	"bubble-jira/config"
-    "fmt"
-    "time"
-    "strconv"
-    "strings"
+	"bubble-jira/ui/types"
+	"fmt"
+	"time"
+	"strconv"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/progress"
@@ -55,7 +56,7 @@ func (m model) updateMenu(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Batch(
 					fetchJiraTasksCmd(m.jc),
 					tickFetchCmd(),
-					m.fetching.spinner.Tick,
+					m.fetching.Spinner.Tick,
 				)
 			case Strings["MenuSettingsTitle"]:
                 m.state = "settings"
@@ -163,20 +164,20 @@ func (m model) updateLicence(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) updateFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tickMsg:
-		if m.fetching.currentStage < len(m.fetching.stages)-1 {
-            m.fetching.currentStage++
-            percent := float64(m.fetching.currentStage+1) / float64(len(m.fetching.stages))
-            progressCmd := m.fetching.progress.SetPercent(percent)
-            m.fetching.status = m.fetching.stages[m.fetching.currentStage]
+		if m.fetching.CurrentStage < len(m.fetching.Stages)-1 {
+            m.fetching.CurrentStage++
+            percent := float64(m.fetching.CurrentStage+1) / float64(len(m.fetching.Stages))
+            progressCmd := m.fetching.Progress.SetPercent(percent)
+            m.fetching.Status = m.fetching.Stages[m.fetching.CurrentStage]
             return m, tea.Batch(tickFetchCmd(), progressCmd)
         }
 		return m, tickFetchCmd()
 
 		case issuesFetchedMsg:
         	if msg.err != nil {
-        		m.fetching.error = msg.err.Error()
-        		m.fetching.done = true
-        		m.fetching.progress.SetPercent(1.0)
+        		m.fetching.Error = msg.err.Error()
+        		m.fetching.Done = true
+        		m.fetching.Progress.SetPercent(1.0)
         		m.state = "fetching"
         		return m, nil
         	}
@@ -227,20 +228,20 @@ func (m model) updateFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
         	})
 
         	m.tasksTable = t
-        	m.fetching.progress.SetPercent(1.0)
-        	m.fetching.done = true
-        	m.fetching.status = "Complete!"
+        	m.fetching.Progress.SetPercent(1.0)
+        	m.fetching.Done = true
+        	m.fetching.Status = "Complete!"
         	m.state = "tasks"
         	return m, nil
 
 	case spinner.TickMsg:
 		var cmd tea.Cmd
-		m.fetching.spinner, cmd = m.fetching.spinner.Update(msg)
+		m.fetching.Spinner, cmd = m.fetching.Spinner.Update(msg)
 		return m, cmd
 
 	case progress.FrameMsg:
-		newProgress, cmd := m.fetching.progress.Update(msg)
-		m.fetching.progress = newProgress.(progress.Model)
+		newProgress, cmd := m.fetching.Progress.Update(msg)
+		m.fetching.Progress = newProgress.(progress.Model)
 		return m, cmd
 
 	case tea.KeyMsg:
@@ -349,7 +350,7 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
                     m.state = "comments-fetching"
                     return m, tea.Batch(
                         tickFetchCmd(),
-                        m.fetching.spinner.Tick,
+                        m.fetching.Spinner.Tick,
                     )
                 } else {
                     m.commentsLoading = true
@@ -358,7 +359,7 @@ func (m model) updateTasks(msg tea.Msg) (tea.Model, tea.Cmd) {
                     return m, tea.Batch(
                         fetchCommentsCmd(m.jc, key),
                         tickFetchCmd(),
-                        m.fetching.spinner.Tick,
+                        m.fetching.Spinner.Tick,
                     )
                 }
             }
@@ -449,16 +450,16 @@ func (m model) updateTaskContext(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case msg.String() == keyEnter:
 			selected := m.taskContextMenu.SelectedItem()
-			menuItem := selected.(contextMenuItem)
+			menuItem := selected.(types.ContextMenuItem)
 
-			if menuItem.title == Strings["ContextViewComments"] && m.selectedIssue != nil {
+			if menuItem.Title() == Strings["ContextViewComments"] && m.selectedIssue != nil {
 				m.commentsLoading = true
 				m.fetching = newFetchingModel()
 				m.state = "comments-fetching"
 				return m, tea.Batch(
 					fetchCommentsCmd(m.jc, m.selectedIssue.Key),
 					tickFetchCmd(),
-					m.fetching.spinner.Tick,
+					m.fetching.Spinner.Tick,
 				)
 			}
 			m.state = "tasks"
@@ -480,11 +481,11 @@ func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tickMsg:
 		// Increment progress stage if not finished
-		if m.fetching.currentStage < len(m.fetching.stages)-1 {
-            m.fetching.currentStage++
-            m.fetching.status = m.fetching.stages[m.fetching.currentStage]
-            percent := float64(m.fetching.currentStage+1) / float64(len(m.fetching.stages))
-            progressCmd := m.fetching.progress.SetPercent(percent)
+		if m.fetching.CurrentStage < len(m.fetching.Stages)-1 {
+            m.fetching.CurrentStage++
+            m.fetching.Status = m.fetching.Stages[m.fetching.CurrentStage]
+            percent := float64(m.fetching.CurrentStage+1) / float64(len(m.fetching.Stages))
+            progressCmd := m.fetching.Progress.SetPercent(percent)
             return m, tea.Batch(tickFetchCmd(), progressCmd)
         }
 
@@ -496,9 +497,9 @@ func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
         }
 
 		// Only quit automatically if this animation came from statusCodeMsg
-		if m.fetching.fromStatus {
+		if m.fetching.FromStatus {
             fmt.Printf("\nThis window will close in %d seconds.\n", closeAfterSec)
-            m.fetching.fromStatus = false // reset flag
+            m.fetching.FromStatus = false // reset flag
             return m, tea.Tick(time.Duration(closeAfterSec)*time.Second, func(time.Time) tea.Msg {
                 return quitAfterDelayMsg{}
             })
@@ -507,19 +508,19 @@ func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case statusCodeMsg:
 		if msg.Code >= 200 && msg.Code < 300 {
-			m.fetching.currentStage = 0
-			m.fetching.progress.SetPercent(0.0)
-			m.fetching.status = m.fetching.stages[0]
-			m.fetching.fromStatus = true
+			m.fetching.CurrentStage = 0
+			m.fetching.Progress.SetPercent(0.0)
+			m.fetching.Status = m.fetching.Stages[0]
+			m.fetching.FromStatus = true
 
 			return m, tickFetchCmd()
 		}
 
 	case commentsFetchedMsg:
 		if msg.err != nil {
-			m.fetching.error = msg.err.Error()
-			m.fetching.done = true
-			m.fetching.progress.SetPercent(1.0)
+			m.fetching.Error = msg.err.Error()
+			m.fetching.Done = true
+			m.fetching.Progress.SetPercent(1.0)
 			m.state = "comments-fetching"
 			return m, nil
 		}
@@ -538,14 +539,14 @@ func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 			glamour.WithWordWrap(m.screenWidth-4),
 		)
 		if err != nil {
-			m.fetching.error = err.Error()
+			m.fetching.Error = err.Error()
 			m.state = "comments-fetching"
 			return m, nil
 		}
 
 		renderedContent, err := renderer.Render(markdownContent)
 		if err != nil {
-			m.fetching.error = err.Error()
+			m.fetching.Error = err.Error()
 			m.state = "comments-fetching"
 			return m, nil
 		}
@@ -556,12 +557,12 @@ func (m model) updateCommentsFetching(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case spinner.TickMsg:
 		var cmd tea.Cmd
-		m.fetching.spinner, cmd = m.fetching.spinner.Update(msg)
+		m.fetching.Spinner, cmd = m.fetching.Spinner.Update(msg)
 		return m, cmd
 
 	case progress.FrameMsg:
-		newProgress, cmd := m.fetching.progress.Update(msg)
-		m.fetching.progress = newProgress.(progress.Model)
+		newProgress, cmd := m.fetching.Progress.Update(msg)
+		m.fetching.Progress = newProgress.(progress.Model)
 		return m, cmd
 
 	case quitAfterDelayMsg:
@@ -630,17 +631,17 @@ func (m model) updateCommentsView(msg tea.Msg) (tea.Model, tea.Cmd) {
 // updateConfigList handles config list state updates
 func (m model) updateConfigList(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	m.configList.list, cmd = m.configList.list.Update(msg)
+	m.configList.List, cmd = m.configList.List.Update(msg)
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
 		case msg.String() == keyEnter:
-            m.editingFieldIdx = m.configList.list.Index()
-            field := m.configList.fields[m.editingFieldIdx]
+            m.editingFieldIdx = m.configList.List.Index()
+            field := m.configList.Fields[m.editingFieldIdx]
 
             // Handle Jira Issue Key selections
-            switch field.key {
+            switch field.Key {
             case "SettingsGitIssueKeyLocation":
                 m.state = "issue-git-location"
                 m.gitIssueLoc.cursor = 0
@@ -654,7 +655,7 @@ func (m model) updateConfigList(msg tea.Msg) (tea.Model, tea.Cmd) {
                 m.ChooseLanguage.cursor = 0
                 return m, nil
             default:
-                m.configInput = newConfigInputEditor(field.key, field.value)
+                m.configInput = newConfigInputEditor(field.Key, field.Value)
                 m.state = "config-edit"
                 return m, nil
             }
@@ -709,7 +710,7 @@ func (m model) updateConfigEdit(msg tea.Msg) (tea.Model, tea.Cmd) {
             if m.configInput.focusSave {
                 value := m.configInput.input.Value()
 
-                m.configList.fields[m.editingFieldIdx].value = value
+                m.configList.Fields[m.editingFieldIdx].Value = value
 
                 m.updateConfigFields()
 

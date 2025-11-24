@@ -2,6 +2,7 @@ package ui
 
 import (
 	"bubble-jira/config"
+	"bubble-jira/ui/types"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -10,8 +11,9 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/lipgloss"
 )
+
 // newFetchingModel creates a new fetching model
-func newFetchingModel() fetchingModel {
+func newFetchingModel() types.FetchingModel {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
@@ -22,32 +24,32 @@ func newFetchingModel() fetchingModel {
 		progress.WithoutPercentage(),
 	)
 
-	return fetchingModel{
-		spinner:      s,
-		progress:     p,
-		stages: []string{
+	return types.FetchingModel{
+		Spinner:      s,
+		Progress:     p,
+		Stages: []string{
 			Strings["FetchStage1"],
 			Strings["FetchStage2"],
 			Strings["FetchStage3"],
 			Strings["FetchStage4"],
 			Strings["FetchStage5"],
 		},
-		currentStage: 0,
-		status: Strings["FetchStage1"],
-		width:        terminalWidth,
+		CurrentStage: 0,
+		Status:       Strings["FetchStage1"],
+		Width:        terminalWidth,
 	}
 }
 
 // newConfigListEditor creates a new config list editor
-func newConfigListEditor(cfg *config.Config) configListEditor {
-	fields := []configField{
-		{key: "base_url", displayKey: Strings["SettingsConfigBaseUrl"], value: cfg.BaseURL},
-        {key: "email", displayKey: Strings["SettingsConfigEmail"], value: cfg.Email},
-        {key: "api_token", displayKey: Strings["SettingsConfigApiToken"], value: cfg.APIToken},
-        {key: "jql", displayKey: Strings["SettingsConfigJQL"], value: cfg.JQL},
-		{key: "SettingsGitIssueKeyLocation", displayKey: Strings["SettingsConfigGitIssueKeyLocation"], value: keyLeftRightMap[cfg.IssueKeyLoc]},
-        {key: "SettingsGitIssueKeyStyle", displayKey: Strings["SettingsConfigGitIssueKeyStyle"], value: keyWrapperMap[cfg.IssueKeyStyle]},
-		{key: "SettingsLanguage", displayKey: Strings["language"], value: cfg.Lang},
+func newConfigListEditor(cfg *config.Config) types.ConfigListEditor {
+	fields := []types.ConfigField{
+		{Key: "base_url", DisplayKey: Strings["SettingsConfigBaseUrl"], Value: cfg.BaseURL},
+        {Key: "email", DisplayKey: Strings["SettingsConfigEmail"], Value: cfg.Email},
+        {Key: "api_token", DisplayKey: Strings["SettingsConfigApiToken"], Value: cfg.APIToken},
+        {Key: "jql", DisplayKey: Strings["SettingsConfigJQL"], Value: cfg.JQL},
+		{Key: "SettingsGitIssueKeyLocation", DisplayKey: Strings["SettingsConfigGitIssueKeyLocation"], Value: keyLeftRightMap[cfg.IssueKeyLoc]},
+        {Key: "SettingsGitIssueKeyStyle", DisplayKey: Strings["SettingsConfigGitIssueKeyStyle"], Value: keyWrapperMap[cfg.IssueKeyStyle]},
+		{Key: "SettingsLanguage", DisplayKey: Strings["language"], Value: cfg.Lang},
 	}
 
 	items := make([]list.Item, len(fields))
@@ -60,28 +62,28 @@ func newConfigListEditor(cfg *config.Config) configListEditor {
 	l.SetShowHelp(true)
 	l.SetShowPagination(false)
 
-	return configListEditor{
-		fields: fields,
-		list:   l,
+	return types.ConfigListEditor{
+		Fields: fields,
+		List:   l,
 	}
 }
 
 // newKeybindingEditor creates a new config list editor
-func newKeybindingEditor(cfg *config.Config) configListEditor {
+func newKeybindingEditor(cfg *config.Config) types.ConfigListEditor {
 	exitKeysStr := ""
 	if len(cfg.Keys.Exit) > 0 {
 		exitKeysStr = strings.Join(cfg.Keys.Exit, "/")
 	}
 
-	fields := []configField{
-        {key: "key_up", displayKey: Strings["SettingsKeyBindingKeyUp"], value: cfg.Keys.Up},
-        {key: "key_down", displayKey: Strings["SettingsKeyBindingKeyDown"], value: cfg.Keys.Down},
-        {key: "key_fast_up", displayKey: Strings["SettingsKeyBindingKeyFastUp"], value: cfg.Keys.FastUp},
-        {key: "key_fast_down", displayKey: Strings["SettingsKeyBindingKeyFastDown"], value: cfg.Keys.FastDown},
-        {key: "enter", displayKey: Strings["SettingsKeyBindingKeyEnter"], value: cfg.Keys.Confirm},
-        {key: "back_cancel", displayKey: Strings["SettingsKeyBindingKeyBack"], value: exitKeysStr},
-        {key: "add_comment", displayKey: Strings["SettingsKeyBindingComment"], value: cfg.Keys.Comment},
-        {key: "search", displayKey: Strings["SettingsKeyBindingSearch"], value: cfg.Keys.Search},
+	fields := []types.ConfigField{
+        {Key: "key_up", DisplayKey: Strings["SettingsKeyBindingKeyUp"], Value: cfg.Keys.Up},
+        {Key: "key_down", DisplayKey: Strings["SettingsKeyBindingKeyDown"], Value: cfg.Keys.Down},
+        {Key: "key_fast_up", DisplayKey: Strings["SettingsKeyBindingKeyFastUp"], Value: cfg.Keys.FastUp},
+        {Key: "key_fast_down", DisplayKey: Strings["SettingsKeyBindingKeyFastDown"], Value: cfg.Keys.FastDown},
+        {Key: "enter", DisplayKey: Strings["SettingsKeyBindingKeyEnter"], Value: cfg.Keys.Confirm},
+        {Key: "back_cancel", DisplayKey: Strings["SettingsKeyBindingKeyBack"], Value: exitKeysStr},
+        {Key: "add_comment", DisplayKey: Strings["SettingsKeyBindingComment"], Value: cfg.Keys.Comment},
+        {Key: "search", DisplayKey: Strings["SettingsKeyBindingSearch"], Value: cfg.Keys.Search},
     }
 
 	items := make([]list.Item, len(fields))
@@ -94,9 +96,9 @@ func newKeybindingEditor(cfg *config.Config) configListEditor {
 	l.SetShowHelp(true)
 	l.SetShowPagination(false)
 
-	return configListEditor{
-		fields: fields,
-		list:   l,
+	return types.ConfigListEditor{
+		Fields: fields,
+		List:   l,
 	}
 }
 
@@ -121,36 +123,36 @@ func newConfigInputEditor(displayKey, value string) configInputEditor {
 
 // updateConfigFields updates the config from the configList fields
 func (m *model) updateConfigFields() {
-	for _, field := range m.configList.fields {
-        switch field.key {
+	for _, field := range m.configList.Fields {
+        switch field.Key {
         case "key_up":
-            m.cfg.Keys.Up = field.value
+            m.cfg.Keys.Up = field.Value
         case "key_down":
-            m.cfg.Keys.Down = field.value
+            m.cfg.Keys.Down = field.Value
         case "key_fast_up":
-            m.cfg.Keys.FastUp = field.value
+            m.cfg.Keys.FastUp = field.Value
         case "key_fast_down":
-            m.cfg.Keys.FastDown = field.value
+            m.cfg.Keys.FastDown = field.Value
         case "enter":
-            m.cfg.Keys.Confirm = field.value
+            m.cfg.Keys.Confirm = field.Value
         case "back_cancel":
-            m.cfg.Keys.Exit = strings.Split(field.value, "/")
+            m.cfg.Keys.Exit = strings.Split(field.Value, "/")
         case "add_comment":
-            m.cfg.Keys.Comment = field.value
+            m.cfg.Keys.Comment = field.Value
         case "search":
-            m.cfg.Keys.Search = field.value
+            m.cfg.Keys.Search = field.Value
 
         // Add other config fields here if needed
         case "base_url":
-            m.cfg.BaseURL = field.value
+            m.cfg.BaseURL = field.Value
         case "email":
-            m.cfg.Email = field.value
+            m.cfg.Email = field.Value
         case "api_token":
-            m.cfg.APIToken = field.value
+            m.cfg.APIToken = field.Value
         case "jql":
-            m.cfg.JQL = field.value
+            m.cfg.JQL = field.Value
         case "language":
-            m.cfg.Lang = field.value
+            m.cfg.Lang = field.Value
         }
     }
 	if err := config.Save(m.cfg); err != nil {
