@@ -293,7 +293,18 @@ func (m model) View() string {
 	case "config":
 		return configStyle.Render(settings.ConfigListView(m.configList))
 	case "config-edit":
-		return configStyle.Render(m.configInputView())
+		viewData := types.ConfigInputViewData{
+            ScreenHeight:           m.screenHeight,
+            ScreenWidth:            m.screenWidth,
+            Keys:                   keyData,
+            Strings:                Strings,
+            ConfigInput:            m.configInput.focusSave,
+            ConfigInputKey:         m.configInput.key,
+            ConfigInputView:        m.configInput.input.View(),
+            FocusedButton:          focusedButton,
+            BlurredButton:          blurredButton,
+        }
+        return menuStyle.Render(settings.ConfigInputView(viewData))
 	case "fetching":
 		return fetchingStyle.Render(views.FetchingView(m.fetching))
     case "task-status":
@@ -343,11 +354,35 @@ func (m model) View() string {
 		}
 		return tasks.TaskSearchView(viewData)
     case "issue-git-location":
-        return m.issueGitLocation()
+        viewData := types.IssueGitLocationData{
+            ScreenHeight:        m.screenHeight,
+            ScreenWidth:         m.screenWidth,
+            Keys:                keyData,
+            Strings:             Strings,
+            GitIssueLocCursor:   m.gitIssueLoc.cursor,
+        }
+        return menuStyle.Render(settings.IssueGitLocation(viewData))
     case "issue-git-style":
-        return m.issueGitStyle()
+        viewData := types.IssueGitStyleData{
+            ScreenHeight:        m.screenHeight,
+            ScreenWidth:         m.screenWidth,
+            Keys:                keyData,
+            Strings:             Strings,
+            GitIssueStyleCursor: m.gitIssueStyle.cursor,
+            Style1:              style1,
+            Style2:              style2,
+        }
+        return menuStyle.Render(settings.IssueGitStyle(viewData))
     case "select-Language":
-        return m.selectLanguage()
+        viewData := types.SelectLanguageData{
+            ScreenHeight:         m.screenHeight,
+            ScreenWidth:          m.screenWidth,
+            Keys:                 keyData,
+            Strings:              Strings,
+            AllowedLanguages:     allowedLanguages,
+            ChooseLanguageCursor: m.ChooseLanguage.cursor,
+        }
+        return menuStyle.Render(settings.SelectLanguage(viewData))
 	default:
 		return "Unknown state"
 	}
