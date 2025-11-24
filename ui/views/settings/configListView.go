@@ -1,4 +1,4 @@
-package views
+package settings
 
 import "bubble-jira/ui/types"
 

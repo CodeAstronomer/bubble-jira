@@ -5,6 +5,9 @@ import (
 	"bubble-jira/jira-code"
 	"bubble-jira/ui/views"
 	"bubble-jira/ui/types"
+	"bubble-jira/ui/views/tasks"
+	"bubble-jira/ui/views/comments"
+	"bubble-jira/ui/views/settings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -261,7 +264,7 @@ func (m model) View() string {
 			Keys:         keyData,
 			Strings:      Strings,
 		}
-		return menuStyle.Render(views.LicenseView(viewData))
+		return menuStyle.Render(settings.LicenseView(viewData))
 	case "tasks":
 		viewData := types.TasksListData{
 			TasksTable:     m.tasksTable,
@@ -269,12 +272,12 @@ func (m model) View() string {
 			Keys:           keyData,
 			Strings:        Strings,
 		}
-		return tasksStyle.Render(views.TasksTableView(viewData))
+		return tasksStyle.Render(tasks.TasksTableView(viewData))
 	case "task-context":
 		viewData := types.TaskContextViewData{
 			Menu: m.taskContextMenu,
 		}
-		return tasksStyle.Render(views.TaskContextView(viewData))
+		return tasksStyle.Render(tasks.TaskContextView(viewData))
 	case "comments-fetching":
 		return fetchingStyle.Render(views.FetchingView(m.fetching))
 	case "comments-view":
@@ -286,9 +289,9 @@ func (m model) View() string {
 			Keys:         keyData,
 			Strings:      Strings,
 		}
-		return menuStyle.Render(views.CommentsView(viewData))
+		return menuStyle.Render(comments.CommentsView(viewData))
 	case "config":
-		return configStyle.Render(views.ConfigListView(m.configList))
+		return configStyle.Render(settings.ConfigListView(m.configList))
 	case "config-edit":
 		return configStyle.Render(m.configInputView())
 	case "fetching":
@@ -302,7 +305,7 @@ func (m model) View() string {
             Statuses:        statuses,
 			JiraStatusInput: m.jiraStatusInput.cursor,
         }
-        return menuStyle.Render(views.TaskStatusView(viewData))
+        return menuStyle.Render(tasks.TaskStatusView(viewData))
     case "task-settings-list":
         return menuStyle.Render(m.taskSettings.View())
     case "add-comment":
@@ -316,7 +319,7 @@ func (m model) View() string {
             FocusedButton:       focusedButton,
             BlurredButton:       blurredButton,
         }
-        return menuStyle.Render(views.AddCommentView(viewData))
+        return menuStyle.Render(comments.AddCommentView(viewData))
     case "enter-commit-message":
         viewData := types.EnterCommitMessageData{
             ScreenHeight:           m.screenHeight,
@@ -338,7 +341,7 @@ func (m model) View() string {
 			KeyMap:          keyMap,
 			KeyEnter:        keyEnter,
 		}
-		return views.TaskSearchView(viewData)
+		return tasks.TaskSearchView(viewData)
     case "issue-git-location":
         return m.issueGitLocation()
     case "issue-git-style":

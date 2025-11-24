@@ -1,4 +1,4 @@
-package views
+package comments
 
 import (
 	"strings"
