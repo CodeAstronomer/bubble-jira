@@ -295,21 +295,40 @@ func (m model) View() string {
 		return fetchingStyle.Render(views.FetchingView(m.fetching))
     case "task-status":
         viewData := types.TaskStatusViewData{
-            IsLoading:    m.commentsLoading,
-            ScreenHeight: m.screenHeight,
-            ScreenWidth:  m.screenWidth,
-            Keys:         keyData,
-            Strings:      Strings,
-            Statuses:     statuses,
+            ScreenHeight:    m.screenHeight,
+            ScreenWidth:     m.screenWidth,
+            Keys:            keyData,
+            Strings:         Strings,
+            Statuses:        statuses,
 			JiraStatusInput: m.jiraStatusInput.cursor,
         }
         return menuStyle.Render(views.TaskStatusView(viewData))
     case "task-settings-list":
         return menuStyle.Render(m.taskSettings.View())
     case "add-comment":
-        return m.addCommentView()
+        viewData := types.AddCommentViewData{
+            ScreenHeight:        m.screenHeight,
+            ScreenWidth:         m.screenWidth,
+            Keys:                keyData,
+            Strings:             Strings,
+            AddCommentInput:     m.addCommentInput.focusSend,
+            AddCommentInputView: m.addCommentInput.input.View(),
+            FocusedButton:       focusedButton,
+            BlurredButton:       blurredButton,
+        }
+        return menuStyle.Render(views.AddCommentView(viewData))
     case "enter-commit-message":
-        return m.enterCommitMessage()
+        viewData := types.EnterCommitMessageData{
+            ScreenHeight:           m.screenHeight,
+            ScreenWidth:            m.screenWidth,
+            Keys:                   keyData,
+            Strings:                Strings,
+            CommitGitMessage:       m.commitGitMessage.focusSend,
+            CommitGitMessageView:   m.commitGitMessage.input.View(),
+            FocusedButtonGit:       focusedButtonGit,
+            BlurredButtonGit:       blurredButtonGit,
+        }
+        return menuStyle.Render(views.EnterCommitMessage(viewData))
     case "task-search":
 		viewData := types.TaskSearchViewData{
 			TaskSearchInput: m.taskSearchInput,
