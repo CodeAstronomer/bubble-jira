@@ -1,7 +1,6 @@
 package ui
 
 import (
-    _ "embed"
     "context"
     "time"
     "fmt"
@@ -10,8 +9,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 )
-//go:embed LICENSE
-var licenseContent []byte
+
+var LicenseContent []byte
 
 type statusCodeMsg struct {
 	Code int
@@ -72,10 +71,10 @@ func loadLicenceCmd() tea.Cmd {
 
 // loadLicenceContent loads the license content from various sources
 func loadLicenceContent() (string, error) {
-	if len(licenseContent) == 0 {
+	if len(LicenseContent) == 0 {
         return "Embedded LICENSE file not found or is empty.", fmt.Errorf("embedded license is empty")
     }
-    return string(licenseContent), nil
+    return string(LicenseContent), nil
 }
 
  // hoverTimeoutCmd erstellt einen Command für den Hover-Timer

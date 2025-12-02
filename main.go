@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"os"
 	"flag"
+	_ "embed"
 
 	"bubble-jira/config"
 	"bubble-jira/jira-code"
 	"bubble-jira/ui"
 )
+
+//go:embed LICENSE
+var RootLicense []byte
 
 func main() {
 	// Define CLI flags
@@ -21,12 +25,14 @@ func main() {
 
 	flag.Parse()
 
+	ui.LicenseContent = RootLicense
+
 	ui.Init()
 
     // Handle help/version flags BEFORE running the program
     if *helpFlag {
         fmt.Println(ui.Strings["HelpHeader"])
-        fmt.Println(ui.Strings["HelpUsage"] + ": jira [flags]")
+        fmt.Println(ui.Strings["HelpUsage"] + ": bubble-jira [flags]")
         fmt.Println(ui.Strings["HelpFlags"] + ":")
         fmt.Println("  --help/ -h    " + ui.Strings["HelpFlagHelp"])
         fmt.Println("  -v           " + ui.Strings["HelpFlagVersion"])
@@ -36,7 +42,7 @@ func main() {
     }
 
     if *versionFlag {
-        fmt.Println("jira version", ui.AppVersion)
+        fmt.Println("bubble-jira version", ui.AppVersion)
         return
     }
 
